@@ -47,6 +47,6 @@ export function getBaseUrl(): string {
     return `https://${process.env.VERCEL_URL}`;
   }
 
-  // Hardcoded production fallback
-  return "https://v0-conversation-context-review.vercel.app";
+  // Hardcoded production fallback (matches Supabase site_url)
+  return "https://adinkrarota.3eyecrosstrain.com";
 }
