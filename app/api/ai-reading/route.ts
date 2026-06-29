@@ -1,0 +1,116 @@
+import { convertToModelMessages, streamText, type UIMessage } from "ai";
+import { UNIVERSAL_WISDOM_SYSTEM_PROMPT, SPREAD_BUILDER_ASSISTANT_PROMPT } from "@/lib/ai-wisdom-prompt";
+import {
+  GROQ_ENV_HINT,
+  GROQ_INVALID_KEY_HINT,
+  isGroqInvalidApiKeyMessage,
+} from "@/lib/ai-groq";
+import { groqLanguageModel, isGroqConfigured } from "@/lib/ai-groq-server";
+import { createClient } from "@/lib/supabase/server";
+
+export const maxDuration = 60;
+
+export async function POST(req: Request) {
+  try {
+    if (!isGroqConfigured()) {
+      return Response.json(
+        { error: `AI is not configured. ${GROQ_ENV_HINT}` },
+        { status: 503 },
+      );
+    }
+
+    const supabase = await createClient();
+    if (!supabase) {
+      return Response.json(
+        { error: "Authentication is not configured." },
+        { status: 503 },
+      );
+    }
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return Response.json(
+        { error: "Sign in required to use AI readings." },
+        { status: 401 },
+      );
+    }
+
+    // Signed-in users only (matches pre-hardening behavior: guests could use AI where the UI allows it).
+    // Optional: reintroduce a member check here if you want AI strictly behind subscription.
+
+    const body = await req.json().catch(() => ({}));
+    const rawMessages = body?.messages as UIMessage[] | undefined;
+    const modelId = body?.modelId as string | undefined;
+    const readingContext = body?.readingContext as string | undefined;
+
+    if (!Array.isArray(rawMessages) || rawMessages.length === 0) {
+      return Response.json(
+        { error: "Invalid prompt: messages must not be empty." },
+        { status: 400 },
+      );
+    }
+
+    // Determine system prompt (reading / spread-builder context)
+    const isSpreadBuilder = readingContext?.includes("SPREAD_BUILDER_MODE");
+    let systemMessage = isSpreadBuilder
+      ? SPREAD_BUILDER_ASSISTANT_PROMPT
+      : UNIVERSAL_WISDOM_SYSTEM_PROMPT;
+
+    if (readingContext) {
+      systemMessage += `\n\n${readingContext}`;
+    }
+
+    const modelMessages = await convertToModelMessages(rawMessages);
+
+    if (modelMessages.length === 0) {
+      return Response.json(
+        { error: "Invalid prompt: could not convert messages." },
+        { status: 400 },
+      );
+    }
+
+    const result = streamText({
+      model: groqLanguageModel(modelId),
+      system: systemMessage,
+      messages: modelMessages,
+      maxOutputTokens: 2500,
+      temperature: 0.8,
+      abortSignal: req.signal,
+    });
+
+    // Groq auth failures happen when the stream runs, not in the try block above.
+    return result.toUIMessageStreamResponse({
+      onError: (err) => {
+        const message =
+          err instanceof Error ? err.message : String(err);
+        if (isGroqInvalidApiKeyMessage(message)) {
+          return `Invalid Groq API key. ${GROQ_INVALID_KEY_HINT}`;
+        }
+        return message;
+      },
+    });
+  } catch (error) {
+    console.error("AI Reading Error:", error);
+    const message =
+      error instanceof Error ? error.message : "Failed to process request";
+
+    if (isGroqInvalidApiKeyMessage(message)) {
+      return Response.json(
+        { error: `Invalid Groq API key. ${GROQ_INVALID_KEY_HINT}` },
+        { status: 401 },
+      );
+    }
+
+    const isOtherAuth = /api[_-]?key|groq/i.test(message);
+    return Response.json(
+      {
+        error: isOtherAuth
+          ? `AI is not configured. ${GROQ_ENV_HINT}`
+          : message,
+      },
+      { status: 500 },
+    );
+  }
+}

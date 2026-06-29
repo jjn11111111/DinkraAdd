@@ -1,0 +1,871 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Copy,
+  Check,
+  RefreshCw,
+  CircleDot,
+  Loader2,
+  Wand2,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { DEFAULT_MODEL_ID, getAISettings } from "@/lib/ai-settings";
+
+const STEPS = [
+  { id: 0, label: "Situation" },
+  { id: 1, label: "Birth keys" },
+  { id: 2, label: "Transits" },
+  { id: 3, label: "Neutral node" },
+] as const;
+
+export interface SpinCycleFields {
+  cycleTitle: string;
+  situation: string;
+  birthName: string;
+  birthDate: string;
+  birthTime: string;
+  birthPlace: string;
+  fulfillmentPole: string;
+  anxietyPole: string;
+  natalProfile: string;
+  extraContext: string;
+  transitContext: string;
+}
+
+const emptyFields: SpinCycleFields = {
+  cycleTitle: "",
+  situation: "",
+  birthName: "",
+  birthDate: "",
+  birthTime: "",
+  birthPlace: "",
+  fulfillmentPole: "",
+  anxietyPole: "",
+  natalProfile: "",
+  extraContext: "",
+  transitContext: "",
+};
+
+interface SpinCycleProps {
+  canUseInteractive: boolean;
+}
+
+function trimSnippet(text: string, max: number): string {
+  const t = text.trim();
+  if (!t) return "";
+  if (t.length <= max) return t;
+  return `${t.slice(0, max - 1).trim()}…`;
+}
+
+export function buildSpinSynthesis(
+  f: SpinCycleFields,
+  opts?: { ephemerisBlock?: string },
+): {
+  headline: string;
+  polarityBridge: string;
+  transitLayer: string;
+  neutralNode: string;
+  practices: string[];
+} {
+  const title = f.cycleTitle.trim() || "This cycle";
+  const situation = f.situation.trim();
+  const fulfill = f.fulfillmentPole.trim();
+  const anxiety = f.anxietyPole.trim();
+  const natal = f.natalProfile.trim();
+  const extra = f.extraContext.trim();
+  const transits = f.transitContext.trim();
+  const baseline = [natal, extra].filter(Boolean).join(" | ");
+
+  const headline =
+    situation.length > 0
+      ? `${title}: ${trimSnippet(situation, 140)}`
+      : `${title} — name the tension between what calls you forward and what unsettles you.`;
+
+  let polarityBridge: string;
+  if (fulfill && anxiety) {
+    polarityBridge = `Your wheel spins between two truths: the pull toward ${trimSnippet(fulfill, 120)} and the weight of ${trimSnippet(anxiety, 120)}. Neither pole is “wrong”; they are the rim and the hub of the same rotation.`;
+  } else if (fulfill || anxiety) {
+    polarityBridge =
+      "Sketch both poles explicitly—the bright pull and the heavy drag—so the wheel has a full turn. One-sided focus makes the spin feel like chaos instead of a cycle.";
+  } else {
+    polarityBridge =
+      "Name the two poles: what this situation promises or activates in you, and what it threatens or depletes. That pair is your personal Wheel of Fortune: motion between gain and cost.";
+  }
+
+  let transitLayer: string;
+  if (transits && baseline) {
+    transitLayer = `Against your baseline tone (${trimSnippet(baseline, 100)}), the current weather reads as: ${trimSnippet(transits, 160)}. The useful question is where those layers agree, clash, or ask for a slower tempo—not which side “wins.”`;
+  } else if (transits) {
+    transitLayer = `Present transits and timing: ${trimSnippet(transits, 220)}. Treat this as moving sky over steady ground: notice pace, pressure, and where you need support, not just insight.`;
+  } else if (baseline) {
+    transitLayer = `You’ve named your natal / numerological tone (${trimSnippet(baseline, 120)}). Add a few words on what’s moving now (dates, seasons, major life events) so the neutral node can sit between chart and moment.`;
+  } else {
+    transitLayer =
+      "Add both a natal snapshot (Sun, Moon, rising, life path, or how you typically handle change) and what’s astrologically or practically “in motion” now. The neutral node lives in the overlap.";
+  }
+
+  const ephemeris = opts?.ephemerisBlock?.trim();
+  if (ephemeris) {
+    transitLayer = `${transitLayer}\n\n[Ephemeris — tropical, geocentric; MIT Astronomy Engine]\n${ephemeris}`;
+  }
+
+  const neutralNode =
+    fulfill && anxiety
+      ? `Hold a third position: protect the fulfillment (${trimSnippet(fulfill, 80)}) while honoring the anxiety as a signal (${trimSnippet(anxiety, 80)}), not a verdict. The “child” of the question is the sustainable pace that lets the dream land without burning the body.`
+      : `The neutral node is not numbness—it’s a workable rhythm: enough structure to feel safe, enough openness to stay true to the opportunity. Fill both poles above to tighten this into your specific spell of focus.`;
+
+  const practices: string[] = [];
+  if (fulfill && anxiety) {
+    practices.push(
+      `Weekly anchor: one small ritual that reinforces “${trimSnippet(fulfill, 60)}” without pretending “${trimSnippet(anxiety, 60)}” doesn’t exist.`,
+    );
+    practices.push(
+      "Body first: sleep, food, and nervous-system care are the error-correction layer when the wheel speeds up.",
+    );
+    practices.push(
+      "One boundary and one bridge: name what you won’t sacrifice yet, and one concrete step toward belonging in the new field.",
+    );
+  } else {
+    practices.push("Write both poles in two sentences each; read them aloud as a pair.");
+    practices.push("Pick one support (person, practice, or place) that stabilizes the anxiety pole without canceling the dream.");
+    practices.push("Revisit this sheet after the next Moon phase or any major calendar shift you’re tracking.");
+  }
+
+  return { headline, polarityBridge, transitLayer, neutralNode, practices };
+}
+
+function toDatetimeLocalValue(d: Date): string {
+  const y = d.getFullYear();
+  const mo = String(d.getMonth() + 1).padStart(2, "0");
+  const da = String(d.getDate()).padStart(2, "0");
+  const h = String(d.getHours()).padStart(2, "0");
+  const mi = String(d.getMinutes()).padStart(2, "0");
+  return `${y}-${mo}-${da}T${h}:${mi}`;
+}
+
+function SpinCycleCaseStudy() {
+  return (
+    <div className="rounded-xl mystical-border bg-card/40 backdrop-blur-sm p-6 md:p-8 space-y-6">
+      <div className="space-y-2">
+        <h2 className="text-2xl font-semibold text-gold-gradient">Case Study: Dream Job, New Continent</h2>
+        <p className="text-sm text-muted-foreground font-serif leading-relaxed">
+          A Cancer querant receives a dream international offer. Their excitement is real, and so is the
+          anxiety: no familiar support system, fear of overwhelm, health vulnerability under stress. Spin
+          Cycle maps this polarity into a practical present-moment strategy.
+        </p>
+      </div>
+
+      <section className="space-y-3">
+        <h3 className="text-xs uppercase tracking-widest text-primary">1) Submission</h3>
+        <p className="text-sm font-serif text-muted-foreground">
+          The question is submitted in plain language: what is changing, what is desired, and what feels
+          destabilizing right now.
+        </p>
+        <div className="rounded-md border border-border bg-background/60 p-3 text-xs font-mono whitespace-pre-wrap">
+          Situation: I got the job I prayed for in another country. I feel called to it, but I am panicking
+          about starting over and losing my grounding.
+        </div>
+      </section>
+
+      <section className="space-y-3">
+        <h3 className="text-xs uppercase tracking-widest text-primary">2) Discovery</h3>
+        <p className="text-sm font-serif text-muted-foreground">
+          The wheel is split into two forces: fulfillment and cost. This prevents spiritual bypass and
+          clarifies the true energetic equation.
+        </p>
+        <div className="grid md:grid-cols-2 gap-3 text-sm font-serif">
+          <div className="rounded-md border border-primary/30 bg-primary/5 p-3">
+            <p className="text-primary font-semibold mb-1">Fulfillment Pole</p>
+            <p className="text-muted-foreground">Purpose, expansion, earned opportunity, visibility, growth.</p>
+          </div>
+          <div className="rounded-md border border-accent/30 bg-accent/5 p-3">
+            <p className="text-foreground font-semibold mb-1">Cost / Anxiety Pole</p>
+            <p className="text-muted-foreground">Loss of familiarity, isolation risk, nervous-system overload.</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="space-y-3">
+        <h3 className="text-xs uppercase tracking-widest text-primary">3) Identification</h3>
+        <p className="text-sm font-serif text-muted-foreground">
+          Natal tone identifies default coping patterns (for example: Cancer stress response = protective
+          withdrawal + somatic load). This names the personal bias that colors interpretation.
+        </p>
+      </section>
+
+      <section className="space-y-3">
+        <h3 className="text-xs uppercase tracking-widest text-primary">4) Current Ephemeris Layer</h3>
+        <p className="text-sm font-serif text-muted-foreground">
+          Current transits are compared with natal tone to separate temporary weather from enduring identity.
+          The output supports timing and pacing decisions.
+        </p>
+      </section>
+
+      <section className="space-y-3">
+        <h3 className="text-xs uppercase tracking-widest text-primary">5) Present-Moment Strategy</h3>
+        <ul className="list-disc pl-5 space-y-2 text-sm font-serif text-muted-foreground">
+          <li>Anchor one non-negotiable body-care ritual daily (sleep + food + breath).</li>
+          <li>Build one bridge each week (local relationship, mentor, or community contact).</li>
+          <li>Stage integration in 90-day windows to protect energy while momentum builds.</li>
+          <li>Use anxiety as a signal for calibration, not as proof the path is wrong.</li>
+        </ul>
+        <p className="text-sm font-serif text-foreground">
+          Highest outcome: the dream is accepted without self-abandonment. Choice stays sovereign, and pace
+          becomes the cure.
+        </p>
+      </section>
+    </div>
+  );
+}
+
+export function SpinCycle({ canUseInteractive }: SpinCycleProps) {
+  const [step, setStep] = useState(0);
+  const [fields, setFields] = useState<SpinCycleFields>(emptyFields);
+  const [copied, setCopied] = useState(false);
+  const [ephemerisBlock, setEphemerisBlock] = useState("");
+  const [transitEphemLocal, setTransitEphemLocal] = useState(() => toDatetimeLocalValue(new Date()));
+  const [birthEphemLocal, setBirthEphemLocal] = useState("");
+  const [ephemerisLoading, setEphemerisLoading] = useState(false);
+  const [ephemerisError, setEphemerisError] = useState<string | null>(null);
+  const [aiInsight, setAiInsight] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+
+  const synthesis = useMemo(
+    () => buildSpinSynthesis(fields, { ephemerisBlock: ephemerisBlock || undefined }),
+    [fields, ephemerisBlock],
+  );
+
+  const canAdvance =
+    step === 0
+      ? fields.situation.trim().length > 0
+      : step === 1
+        ? fields.birthName.trim().length > 0 &&
+          fields.birthDate.trim().length > 0 &&
+          fields.birthTime.trim().length > 0 &&
+          fields.birthPlace.trim().length > 0
+        : true;
+
+  const copySummary = async () => {
+    const text = [
+      `Spin Cycle — ${fields.cycleTitle.trim() || "Untitled"}`,
+      "",
+      "Situation:",
+      fields.situation.trim(),
+      "",
+      "Birth name:",
+      fields.birthName.trim() || "(—)",
+      "Birth date:",
+      fields.birthDate.trim() || "(—)",
+      "Birth time:",
+      fields.birthTime.trim() || "(—)",
+      "Birth place:",
+      fields.birthPlace.trim() || "(—)",
+      "",
+      "Fulfillment pole:",
+      fields.fulfillmentPole.trim() || "(inferred by AI)",
+      "",
+      "Anxiety / cost pole:",
+      fields.anxietyPole.trim() || "(inferred by AI)",
+      "",
+      "Natal notes:",
+      fields.natalProfile.trim() || "(—)",
+      fields.extraContext.trim() ? `Other relevant notes: ${fields.extraContext.trim()}` : "",
+      "",
+      "Transits / timing:",
+      fields.transitContext.trim() || "(—)",
+      "",
+      "— Synthesis —",
+      synthesis.headline,
+      "",
+      synthesis.polarityBridge,
+      "",
+      synthesis.transitLayer,
+      "",
+      synthesis.neutralNode,
+      aiInsight.trim() ? "\n— AI Strategy —" : "",
+      aiInsight.trim() ? aiInsight.trim() : "",
+      "",
+      "Practice:",
+      ...synthesis.practices.map((p) => `• ${p}`),
+    ]
+      .filter((s) => s !== "")
+      .join("\n");
+
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  };
+
+  const reset = () => {
+    setStep(0);
+    setFields(emptyFields);
+    setCopied(false);
+    setEphemerisBlock("");
+    setTransitEphemLocal(toDatetimeLocalValue(new Date()));
+    setBirthEphemLocal("");
+    setEphemerisError(null);
+    setAiInsight("");
+    setAiError(null);
+  };
+
+  const fetchEphemeris = async () => {
+    setEphemerisError(null);
+    const transitDate = new Date(transitEphemLocal);
+    if (Number.isNaN(transitDate.getTime())) {
+      setEphemerisError("Transit date/time is not valid.");
+      return;
+    }
+    const transitIso = transitDate.toISOString();
+    let birthIso: string | undefined;
+    const birthLocalCandidate =
+      fields.birthDate && fields.birthTime
+        ? `${fields.birthDate}T${fields.birthTime}`
+        : birthEphemLocal.trim();
+    if (birthLocalCandidate) {
+      const b = new Date(birthLocalCandidate);
+      if (Number.isNaN(b.getTime())) {
+        setEphemerisError("Birth date/time is not valid.");
+        return;
+      }
+      birthIso = b.toISOString();
+    }
+    setEphemerisLoading(true);
+    try {
+      const res = await fetch("/api/spin-cycle-ephemeris", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ transitIso, birthIso }),
+      });
+      const data = (await res.json()) as { combinedText?: string; error?: string };
+      if (!res.ok) {
+        setEphemerisError(data.error || "Could not compute positions.");
+        return;
+      }
+      if (typeof data.combinedText === "string") {
+        setEphemerisBlock(data.combinedText);
+      }
+    } catch {
+      setEphemerisError("Network error — try again.");
+    } finally {
+      setEphemerisLoading(false);
+    }
+  };
+
+  const generateAiInsight = async () => {
+    setAiError(null);
+    setAiInsight("");
+
+    const aiSettings = getAISettings();
+    const modelId = aiSettings?.enabled ? aiSettings.modelId : DEFAULT_MODEL_ID;
+
+    setAiLoading(true);
+    try {
+      const res = await fetch("/api/spin-cycle-insight", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          modelId,
+          cycleTitle: fields.cycleTitle,
+          situation: fields.situation,
+          fulfillmentPole: fields.fulfillmentPole || undefined,
+          anxietyPole: fields.anxietyPole || undefined,
+          birthName: fields.birthName,
+          birthDate: fields.birthDate,
+          birthTime: fields.birthTime,
+          birthPlace: fields.birthPlace,
+          natalProfile: fields.natalProfile,
+          extraContext: fields.extraContext,
+          transitContext: fields.transitContext,
+          ephemerisBlock: ephemerisBlock || undefined,
+        }),
+      });
+      const data = (await res.json()) as { insight?: string; error?: string };
+      if (!res.ok) {
+        setAiError(data.error || "Could not generate strategy.");
+        return;
+      }
+      if (typeof data.insight === "string") {
+        setAiInsight(data.insight);
+      } else {
+        setAiError("AI returned an empty response.");
+      }
+    } catch {
+      setAiError("Network error while generating strategy.");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  return (
+    <div className="max-w-3xl mx-auto px-6 pb-16">
+      <header className="text-center mb-10 pt-4">
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="inline-flex items-center gap-2 text-primary mb-3"
+        >
+          <RefreshCw className="w-5 h-5" aria-hidden />
+          <span className="text-sm font-serif tracking-widest uppercase">Wheel X · Spin Cycle</span>
+        </motion.div>
+        <h1 className="text-4xl font-bold text-gold-gradient mb-4">Spin Cycle</h1>
+        <p className="text-muted-foreground font-serif leading-relaxed max-w-2xl mx-auto">
+          Clarify a situation, focus, or problem you want to explore. Map the two poles of your
+          intention—like the Wheel of Fortune—then layer in natal tone and current transits to find a
+          neutral, workable center you can actually use.
+        </p>
+      </header>
+
+      {!canUseInteractive && (
+        <div className="mb-8 rounded-lg border border-primary/30 bg-primary/10 px-4 py-3 text-sm font-serif text-muted-foreground">
+          Interactive Spin Cycle is a Membership feature ($2.22). You can explore the full method below
+          with this in-depth case study.
+        </div>
+      )}
+
+      {canUseInteractive ? (
+        <>
+      {/* Step tabs */}
+      <nav className="flex flex-wrap justify-center gap-2 mb-10" aria-label="Spin Cycle steps">
+        {STEPS.map((s, i) => (
+          <button
+            key={s.id}
+            type="button"
+            onClick={() => setStep(i)}
+            className={`px-3 py-1.5 rounded-full text-xs font-serif border transition-colors ${
+              step === i
+                ? "bg-primary/15 border-primary text-primary"
+                : "border-border text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {i + 1}. {s.label}
+          </button>
+        ))}
+      </nav>
+
+      <div className="rounded-xl mystical-border bg-card/50 backdrop-blur-sm p-6 md:p-8">
+        <AnimatePresence mode="wait">
+          {step === 0 && (
+            <motion.div
+              key="situation"
+              initial={{ opacity: 0, x: 12 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -12 }}
+              className="space-y-6"
+            >
+              <div>
+                <Label htmlFor="cycle-title" className="font-serif">
+                  Name this cycle
+                </Label>
+                <Input
+                  id="cycle-title"
+                  placeholder='e.g. "Dream job abroad — Cancer season pivot"'
+                  value={fields.cycleTitle}
+                  onChange={(e) => setFields((p) => ({ ...p, cycleTitle: e.target.value }))}
+                  className="mt-2 font-serif"
+                />
+              </div>
+              <div>
+                <Label htmlFor="situation" className="font-serif">
+                  Situation, focus, or problem
+                </Label>
+                <Textarea
+                  id="situation"
+                  placeholder="State it plainly: what is happening, what you want, and what scares or overwhelms you."
+                  value={fields.situation}
+                  onChange={(e) => setFields((p) => ({ ...p, situation: e.target.value }))}
+                  className="mt-2 min-h-32 font-serif"
+                />
+              </div>
+            </motion.div>
+          )}
+
+          {step === 1 && (
+            <motion.div
+              key="polarity"
+              initial={{ opacity: 0, x: 12 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -12 }}
+              className="space-y-6"
+            >
+              <p className="text-sm text-muted-foreground font-serif">
+                Enter your birth keys so Spin Cycle can connect your baseline patterning to present
+                transits. You can also add any extra astrology or numerology notes.
+              </p>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="birth-name" className="font-serif">
+                    Birth certificate name
+                  </Label>
+                  <Input
+                    id="birth-name"
+                    value={fields.birthName}
+                    onChange={(e) => setFields((p) => ({ ...p, birthName: e.target.value }))}
+                    className="mt-2 font-serif"
+                    placeholder="Full birth name"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="birth-place" className="font-serif">
+                    Place of birth
+                  </Label>
+                  <Input
+                    id="birth-place"
+                    value={fields.birthPlace}
+                    onChange={(e) => setFields((p) => ({ ...p, birthPlace: e.target.value }))}
+                    className="mt-2 font-serif"
+                    placeholder="City, Country"
+                  />
+                </div>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="birth-date" className="font-serif">
+                    Birth date
+                  </Label>
+                  <Input
+                    id="birth-date"
+                    type="date"
+                    value={fields.birthDate}
+                    onChange={(e) => setFields((p) => ({ ...p, birthDate: e.target.value }))}
+                    className="mt-2 font-serif"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="birth-time" className="font-serif">
+                    Birth time
+                  </Label>
+                  <Input
+                    id="birth-time"
+                    type="time"
+                    value={fields.birthTime}
+                    onChange={(e) => setFields((p) => ({ ...p, birthTime: e.target.value }))}
+                    className="mt-2 font-serif"
+                  />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="natal" className="font-serif">
+                  Natal astrology notes (optional)
+                </Label>
+                <Textarea
+                  id="natal"
+                  placeholder="Sun, Moon, rising, key natal aspects, houses, sensitivities."
+                  value={fields.natalProfile}
+                  onChange={(e) => setFields((p) => ({ ...p, natalProfile: e.target.value }))}
+                  className="mt-2 min-h-28 font-serif"
+                />
+              </div>
+              <div>
+                <Label htmlFor="extra-context" className="font-serif">
+                  Other relevant context (optional)
+                </Label>
+                <Textarea
+                  id="extra-context"
+                  placeholder="Numerology, health patterns, spiritual practices, or any detail you want included."
+                  value={fields.extraContext}
+                  onChange={(e) => setFields((p) => ({ ...p, extraContext: e.target.value }))}
+                  className="mt-2 min-h-20 font-serif"
+                />
+              </div>
+              <div className="rounded-md border border-border bg-background/40 p-3 space-y-3">
+                <p className="text-xs font-serif text-muted-foreground">
+                  Optional: if you already know your polarity, add it. Otherwise AI will infer both
+                  opposing poles directly from your situation.
+                </p>
+                <div>
+                  <Label htmlFor="fulfill" className="font-serif text-xs">
+                    Fulfillment pole (optional)
+                  </Label>
+                  <Textarea
+                    id="fulfill"
+                    placeholder="What outcome or expansion are you called toward?"
+                    value={fields.fulfillmentPole}
+                    onChange={(e) => setFields((p) => ({ ...p, fulfillmentPole: e.target.value }))}
+                    className="mt-1 min-h-20 font-serif"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="anxiety" className="font-serif text-xs">
+                    Anxiety/cost pole (optional)
+                  </Label>
+                  <Textarea
+                    id="anxiety"
+                    placeholder="What fear, burden, or destabilizing cost is active?"
+                    value={fields.anxietyPole}
+                    onChange={(e) => setFields((p) => ({ ...p, anxietyPole: e.target.value }))}
+                    className="mt-1 min-h-20 font-serif"
+                  />
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {step === 2 && (
+            <motion.div
+              key="transits"
+              initial={{ opacity: 0, x: 12 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -12 }}
+              className="space-y-6"
+            >
+              <p className="text-sm text-muted-foreground font-serif">
+                What is moving in the sky or in your life timeline right now? Rough dates, houses you
+                watch, or outer-planet passes—all of it helps compare “weather” to “terrain.”
+              </p>
+              <div>
+                <Label htmlFor="transits" className="font-serif">
+                  Transits, timing, and life motion
+                </Label>
+                <Textarea
+                  id="transits"
+                  placeholder="e.g. Jupiter crossing MC; Saturn on IC; relocation window Q2; eclipses in family houses…"
+                  value={fields.transitContext}
+                  onChange={(e) => setFields((p) => ({ ...p, transitContext: e.target.value }))}
+                  className="mt-2 min-h-40 font-serif"
+                />
+              </div>
+
+              <div className="rounded-lg border border-border bg-card/40 p-4 space-y-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground font-serif mb-1">
+                    Free sky snapshot (this app)
+                  </h3>
+                  <p className="text-xs text-muted-foreground font-serif leading-relaxed">
+                    Tropical geocentric longitudes via the open-source{" "}
+                    <span className="text-foreground/90">astronomy-engine</span> (MIT) on your
+                    Vercel function — no paid astrology API. Optional birth moment adds a second
+                    table for comparison. Not for precision house work; fine for synoptic Spin
+                    Cycle notes.
+                  </p>
+                </div>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="ephem-transit" className="font-serif text-xs">
+                      Transit date &amp; time
+                    </Label>
+                    <Input
+                      id="ephem-transit"
+                      type="datetime-local"
+                      value={transitEphemLocal}
+                      onChange={(e) => setTransitEphemLocal(e.target.value)}
+                      className="mt-1.5 font-serif"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="ephem-birth-derived" className="font-serif text-xs">
+                      Birth moment used for natal snapshot
+                    </Label>
+                    <Input
+                      id="ephem-birth-derived"
+                      readOnly
+                      value={
+                        fields.birthDate && fields.birthTime
+                          ? `${fields.birthDate} ${fields.birthTime}`
+                          : "Set birth date/time in Birth keys step"
+                      }
+                      className="mt-1.5 font-serif"
+                    />
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2 items-center">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="font-serif gap-2"
+                    disabled={ephemerisLoading}
+                    onClick={() => void fetchEphemeris()}
+                  >
+                    {ephemerisLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" aria-hidden />
+                    ) : null}
+                    {ephemerisLoading ? "Computing…" : "Add ephemeris to synthesis"}
+                  </Button>
+                  {ephemerisBlock ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="font-serif text-muted-foreground"
+                      onClick={() => setEphemerisBlock("")}
+                    >
+                      Clear snapshot
+                    </Button>
+                  ) : null}
+                </div>
+                {ephemerisError ? (
+                  <p className="text-sm text-destructive font-serif">{ephemerisError}</p>
+                ) : null}
+                {ephemerisBlock ? (
+                  <pre className="text-xs font-mono text-muted-foreground whitespace-pre-wrap max-h-48 overflow-y-auto rounded-md bg-background/60 p-3 border border-border">
+                    {ephemerisBlock}
+                  </pre>
+                ) : null}
+              </div>
+
+              {fields.natalProfile.trim().length === 0 && (
+                <p className="text-xs text-muted-foreground font-serif">
+                  Tip: add natal or numerology notes on the Polarity step so the neutral node can
+                  balance baseline with what’s moving now.
+                </p>
+              )}
+            </motion.div>
+          )}
+
+          {step === 3 && (
+            <motion.div
+              key="synthesis"
+              initial={{ opacity: 0, x: 12 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -12 }}
+              className="space-y-6"
+            >
+              <div className="flex items-start gap-3 p-4 rounded-lg bg-primary/5 border border-primary/20">
+                <CircleDot className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                <div>
+                  <h2 className="font-serif font-semibold text-foreground mb-1">Bare-bones read</h2>
+                  <p className="text-sm text-muted-foreground font-serif leading-relaxed">
+                    This is a structural mirror from your own words. If you used the free ephemeris
+                    snapshot, tropical longitudes are appended for context — still not a full
+                    chart. Use it all as a focus anchor for journaling, ritual, or a reading spread.
+                  </p>
+                </div>
+              </div>
+
+              <section className="space-y-4 font-serif text-sm leading-relaxed">
+                <div>
+                  <h3 className="text-xs uppercase tracking-widest text-primary mb-1">Headline</h3>
+                  <p className="text-foreground">{synthesis.headline}</p>
+                </div>
+                <div>
+                  <h3 className="text-xs uppercase tracking-widest text-primary mb-1">Polarity</h3>
+                  <p className="text-muted-foreground">{synthesis.polarityBridge}</p>
+                </div>
+                <div>
+                  <h3 className="text-xs uppercase tracking-widest text-primary mb-1">
+                    Transits vs. natal
+                  </h3>
+                  <p className="text-muted-foreground">{synthesis.transitLayer}</p>
+                </div>
+                <div>
+                  <h3 className="text-xs uppercase tracking-widest text-primary mb-1">Neutral node</h3>
+                  <p className="text-foreground">{synthesis.neutralNode}</p>
+                </div>
+                <div>
+                  <h3 className="text-xs uppercase tracking-widest text-primary mb-1">Practice</h3>
+                  <ul className="list-disc pl-5 space-y-2 text-muted-foreground">
+                    {synthesis.practices.map((p, i) => (
+                      <li key={i}>{p}</li>
+                    ))}
+                  </ul>
+                </div>
+              </section>
+
+              <section className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="text-xs uppercase tracking-widest text-primary">AI Strategy</h3>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="gap-2 font-serif"
+                    disabled={aiLoading}
+                    onClick={() => void generateAiInsight()}
+                  >
+                    {aiLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" aria-hidden />
+                    ) : (
+                      <Wand2 className="w-4 h-4" aria-hidden />
+                    )}
+                    {aiLoading ? "Generating..." : "Generate aligned actions"}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground font-serif">
+                  Uses your current Spin Cycle inputs plus transit/ephemeris context to propose precise
+                  next actions aligned with your highest desired outcome.
+                </p>
+                {aiError ? (
+                  <p className="text-sm text-destructive font-serif">{aiError}</p>
+                ) : null}
+                {aiInsight ? (
+                  <pre className="text-xs md:text-sm font-serif whitespace-pre-wrap text-foreground rounded-md border border-border bg-background/60 p-3">
+                    {aiInsight}
+                  </pre>
+                ) : null}
+              </section>
+
+              <div className="flex flex-wrap gap-3 pt-2">
+                <Button type="button" variant="outline" onClick={copySummary} className="gap-2 font-serif">
+                  {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  {copied ? "Copied" : "Copy summary"}
+                </Button>
+                <Button type="button" variant="ghost" onClick={reset} className="font-serif text-muted-foreground">
+                  Start over
+                </Button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {step < 3 && (
+          <div className="flex justify-between mt-8 pt-6 border-t border-border">
+            <Button
+              type="button"
+              variant="ghost"
+              className="font-serif gap-2"
+              disabled={step === 0}
+              onClick={() => setStep((s) => Math.max(0, s - 1))}
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back
+            </Button>
+            <Button
+              type="button"
+              className="font-serif gap-2 bg-primary text-primary-foreground"
+              disabled={!canAdvance}
+              onClick={() => setStep((s) => Math.min(STEPS.length - 1, s + 1))}
+            >
+              Next
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          </div>
+        )}
+      </div>
+        </>
+      ) : (
+        <div className="space-y-6">
+          <SpinCycleCaseStudy />
+          <div className="rounded-xl border border-primary/30 bg-card/60 p-5 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+            <div>
+              <p className="font-serif text-foreground">Want to run your own Spin Cycle live?</p>
+              <p className="text-sm text-muted-foreground font-serif">
+                Membership unlocks the interactive workflow plus in-app ephemeris snapshot.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Link href="/auth/login">
+                <Button variant="outline" className="font-serif">Sign In</Button>
+              </Link>
+              <Link href="/pricing">
+                <Button className="font-serif">Unlock for $2.22</Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
