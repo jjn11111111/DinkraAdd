@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo, useRef } from "react";
-import { motion, AnimatePresence, useScroll, useTransform, useSpring } from "framer-motion";
+import { useState, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Search, Filter, Grid3X3, LayoutList } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -23,7 +23,6 @@ export function CardGallery() {
   const [selectedSuits, setSelectedSuits] = useState<CardSuit[]>(suits);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [selectedCard, setSelectedCard] = useState<CardType | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
   const mousePosition = useMouseParallax({ strength: 15, easing: 0.05 });
 
   const filteredCards = useMemo(() => {

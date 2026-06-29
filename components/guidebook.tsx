@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Book, Sparkles, Flame, Droplets, Wind, Coins, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { allCards as cards, type CardType as Card } from "@/lib/card-data";
-import { getGuidebookEntry, getSuitIntro } from "@/lib/guidebook-data";
+import { getGuidebookEntry } from "@/lib/guidebook-data";
 import Image from "next/image";
 import { useMouseParallax } from "@/hooks/use-parallax";
 

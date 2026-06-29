@@ -149,7 +149,7 @@ export function SpreadBuilder({
       }),
     [aiSettings?.modelId]
   );
-  const { messages, sendMessage, status, setMessages, error } = useChat({
+  const { messages, sendMessage, status, error } = useChat({
     transport,
   });
 

@@ -6,6 +6,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { X, ZoomIn, ZoomOut, RotateCcw, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 import type { CardType, DrawnCard } from "@/lib/card-data";
 import { suitInfo } from "@/lib/card-data";
 
@@ -237,14 +238,15 @@ export function ImmersiveCardViewer({ card, onClose }: ImmersiveCardViewerProps)
               {/* Card Image or Fallback */}
               {card.imageUrl ? (
                 <div 
-                  className={`absolute inset-0 bg-card flex items-center justify-center transition-transform duration-500 ${
+                  className={`absolute inset-0 bg-card flex items-center justify-center transition-transform duration-500 relative ${
                     isReversed ? "rotate-180" : ""
                   }`}
                 >
-                  <img
+                  <Image
                     src={card.imageUrl || "/placeholder.svg"}
                     alt={card.name}
-                    className="w-full h-full object-contain"
+                    fill
+                    className="object-contain"
                   />
                 </div>
               ) : (
@@ -325,11 +327,12 @@ export function ImmersiveCardViewer({ card, onClose }: ImmersiveCardViewerProps)
               }}
             >
               {/* Adinkra symbols grid background */}
-              <div className="absolute inset-0 bg-card flex items-center justify-center">
-                <img
+              <div className="absolute inset-0 bg-card flex items-center justify-center relative">
+                <Image
                   src="/images/guidebook/adinkra-symbols-grid.jpeg"
                   alt="Card back"
-                  className="w-full h-full object-contain"
+                  fill
+                  className="object-contain"
                 />
               </div>
               <div className="absolute inset-2 border border-primary/30 rounded-lg" />

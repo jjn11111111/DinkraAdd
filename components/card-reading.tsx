@@ -12,6 +12,7 @@ import { ReadingGate } from "./reading-gate";
 import { drawCardsWithPolarity, type DrawnCard, suitInfo } from "@/lib/card-data";
 import { getAISettings } from "@/lib/ai-settings";
 import type { CustomSpread } from "./spread-builder";
+import Image from "next/image";
 
 type SpreadType = "single" | "three" | "celtic" | "custom";
 
@@ -495,16 +496,17 @@ function SpreadCard({
 
           {/* Card Back */}
           <div
-            className="absolute inset-0 w-full aspect-[2/3] rounded-lg overflow-hidden backface-hidden mystical-border bg-card"
+            className="absolute inset-0 w-full aspect-[2/3] rounded-lg overflow-hidden backface-hidden mystical-border bg-card relative"
             style={{
               backfaceVisibility: "hidden",
               transform: "rotateY(180deg)",
             }}
           >
-            <img
+            <Image
               src="/images/guidebook/adinkra-symbols-grid.jpeg"
               alt="Card back"
-              className="absolute inset-0 w-full h-full object-contain"
+              fill
+              className="object-contain"
             />
             <div className="absolute inset-1 border border-primary/30 rounded-md" />
             <p className="absolute bottom-4 left-0 right-0 text-center text-xs text-white font-serif drop-shadow-lg">

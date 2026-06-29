@@ -12,7 +12,6 @@ import {
   BookOpen, 
   ArrowRight, 
   Shield,
-  Calendar,
   Heart,
   CheckCircle
 } from "lucide-react";
