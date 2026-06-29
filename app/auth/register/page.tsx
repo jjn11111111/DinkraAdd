@@ -32,7 +32,7 @@ import {
   Check,
   Info,
 } from "lucide-react";
-import { DATA_PLEDGE, GUEST_YEARLY_READINGS, MEMBER_FEATURES } from "@/lib/products";
+import { DATA_PLEDGE, GUEST_YEARLY_READINGS } from "@/lib/products";
 
 function RegisterContent() {
   const router = useRouter();

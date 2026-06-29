@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, RefreshCw, Sun } from "lucide-react";
+import { motion } from "framer-motion";
+import { RefreshCw, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 

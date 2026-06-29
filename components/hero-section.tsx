@@ -3,6 +3,7 @@
 import { motion, useScroll, useTransform, useSpring } from "framer-motion";
 import { ChevronDown, BookOpen, Sparkles, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 import { useMouseParallax } from "@/hooks/use-parallax";
 import { FloatingElement } from "@/components/parallax-layers";
 import { useRef } from "react";
@@ -177,23 +178,24 @@ export function HeroSection({ onExplore, onReading, onSpinCycle }: HeroSectionPr
             >
               {/* Outer wheel - clockwise */}
               <motion.div
-                className="absolute inset-0 w-full h-full overflow-hidden rounded-full"
+                className="absolute inset-0 w-full h-full overflow-hidden rounded-full relative"
                 style={{
                   filter: 'drop-shadow(0 0 30px rgba(233, 30, 140, 0.3)) drop-shadow(0 0 60px rgba(0, 184, 148, 0.2))',
                 }}
                 animate={{ rotate: 360 }}
                 transition={{ duration: 90, repeat: Infinity, ease: "linear" }}
               >
-                <img
+                <Image
                   src="/images/portal-wheel.png"
                   alt="ADINKRAROTA - Tarot + Adinkra Portal"
-                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-full w-auto max-w-none"
+                  fill
+                  className="object-contain"
                 />
               </motion.div>
               
               {/* Inner wheel - counter-clockwise with opposite parallax */}
               <motion.div
-                className="absolute inset-[18%] w-[64%] h-[64%] overflow-hidden rounded-full opacity-75"
+                className="absolute inset-[18%] w-[64%] h-[64%] overflow-hidden rounded-full opacity-75 relative"
                 style={{
                   filter: 'drop-shadow(0 0 20px rgba(0, 184, 148, 0.4)) brightness(1.1)',
                   transform: `translate(${mousePosition.x * -0.05}px, ${mousePosition.y * -0.05}px)`,
@@ -201,10 +203,11 @@ export function HeroSection({ onExplore, onReading, onSpinCycle }: HeroSectionPr
                 animate={{ rotate: -360 }}
                 transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
               >
-                <img
+                <Image
                   src="/images/portal-wheel.png"
                   alt=""
-                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-full w-auto max-w-none"
+                  fill
+                  className="object-contain"
                 />
               </motion.div>
             </motion.div>

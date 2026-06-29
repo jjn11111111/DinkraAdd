@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
+import Image from "next/image";
 import type { CardType } from "@/lib/card-data";
 import { suitInfo } from "@/lib/card-data";
 
@@ -41,11 +42,12 @@ export function CardThumbnail({ card, onClick }: CardThumbnailProps) {
     >
       {/* Card Image or Fallback Background */}
       {card.imageUrl ? (
-        <div className="absolute inset-0 bg-card">
-          <img
+        <div className="absolute inset-0 bg-card relative">
+          <Image
             src={card.imageUrl || "/placeholder.svg"}
             alt={card.name}
-            className="w-full h-full object-contain"
+            fill
+            className="object-contain"
           />
         </div>
       ) : (

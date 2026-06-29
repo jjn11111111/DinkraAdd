@@ -2,16 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Sparkles, Check, AlertCircle, Trash2, Zap } from "lucide-react";
+import { X, Sparkles, Check, AlertCircle, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AI_MODELS,
-  DEFAULT_MODEL_ID,
   type AISettings,
   getAISettings,
   saveAISettings,
   clearAISettings,
-  getModelById,
   getDefaultSettings,
 } from "@/lib/ai-settings";
 
@@ -37,8 +35,6 @@ export function AISettingsModal({
       setSettings(stored);
     }
   }, []);
-
-  const selectedModel = getModelById(settings.modelId);
 
   const handleSave = () => {
     const newSettings = { ...settings, enabled: true };

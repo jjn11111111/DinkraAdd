@@ -23,11 +23,10 @@ import {
   type AISettings,
   getAISettings,
   getModelById,
-  getDefaultSettings,
   DEFAULT_MODEL_ID,
 } from "@/lib/ai-settings";
 import { AISettingsModal } from "./ai-settings-modal";
-import type { CardType, DrawnCard } from "@/lib/card-data";
+import type { DrawnCard } from "@/lib/card-data";
 import { getGuidebookEntry } from "@/lib/guidebook-data";
 import { getReadingContext } from "@/lib/ai-wisdom-prompt";
 import {
