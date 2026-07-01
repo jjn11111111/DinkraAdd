@@ -167,7 +167,7 @@ export function HeroSection({ onExplore, onReading, onSpinCycle }: HeroSectionPr
               transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 1 }}
             />
             
-            {/* Levitating Portal Wheels with mouse response */}
+            {/* Levitating Portal Wheels — shared center anchor, separate spin layers */}
             <motion.div
               className="absolute inset-0 overflow-hidden rounded-full"
               animate={{ y: [-6, 6, -6] }}
@@ -176,38 +176,45 @@ export function HeroSection({ onExplore, onReading, onSpinCycle }: HeroSectionPr
                 transform: `translate(${mousePosition.x * 0.08}px, ${mousePosition.y * 0.08}px)`,
               }}
             >
-              {/* Back wheel - 33% larger, spins clockwise */}
-              <motion.div
-                className="absolute left-1/2 top-1/2 h-[133%] w-[133%] -translate-x-1/2 -translate-y-1/2"
-                animate={{ rotate: 360 }}
-                transition={{ duration: 90, repeat: Infinity, ease: "linear" }}
-              >
-                <Image
-                  src="/images/portal-wheel-circle.png"
-                  alt=""
-                  fill
-                  className="object-contain"
-                  aria-hidden
-                />
-              </motion.div>
+              {/* Back wheel — 33% larger, clockwise */}
+              <div className="absolute left-1/2 top-1/2 aspect-square w-[133%] -translate-x-1/2 -translate-y-1/2">
+                <motion.div
+                  className="relative size-full"
+                  style={{ originX: "50%", originY: "50%" }}
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 90, repeat: Infinity, ease: "linear" }}
+                >
+                  <Image
+                    src="/images/portal-wheel-circle.png"
+                    alt=""
+                    fill
+                    className="object-contain"
+                    aria-hidden
+                  />
+                </motion.div>
+              </div>
 
-              {/* Front wheel - smaller, see-through, spins counter-clockwise */}
-              <motion.div
-                className="absolute left-1/2 top-1/2 h-[82%] w-[82%] -translate-x-1/2 -translate-y-1/2 opacity-70"
-                style={{
-                  filter: 'drop-shadow(0 0 24px rgba(233, 30, 140, 0.25)) drop-shadow(0 0 48px rgba(0, 184, 148, 0.15))',
-                }}
-                animate={{ rotate: -360 }}
-                transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
-              >
-                <Image
-                  src="/images/portal-wheel-circle.png"
-                  alt="ADINKRAROTA - Tarot + Adinkra Portal"
-                  fill
-                  className="object-contain"
-                  priority
-                />
-              </motion.div>
+              {/* Front wheel — smaller, see-through, counter-clockwise */}
+              <div className="absolute left-1/2 top-1/2 aspect-square w-[82%] -translate-x-1/2 -translate-y-1/2 opacity-70">
+                <motion.div
+                  className="relative size-full"
+                  style={{
+                    originX: "50%",
+                    originY: "50%",
+                    filter: "drop-shadow(0 0 24px rgba(233, 30, 140, 0.25)) drop-shadow(0 0 48px rgba(0, 184, 148, 0.15))",
+                  }}
+                  animate={{ rotate: -360 }}
+                  transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
+                >
+                  <Image
+                    src="/images/portal-wheel-circle.png"
+                    alt="ADINKRAROTA - Tarot + Adinkra Portal"
+                    fill
+                    className="object-contain"
+                    priority
+                  />
+                </motion.div>
+              </div>
             </motion.div>
           </motion.div>
         </FloatingElement>
