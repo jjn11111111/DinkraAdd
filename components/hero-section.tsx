@@ -178,7 +178,7 @@ export function HeroSection({ onExplore, onReading, onSpinCycle }: HeroSectionPr
             >
               {/* Outer wheel - clockwise */}
               <motion.div
-                className="absolute inset-0 w-full h-full overflow-hidden rounded-full relative"
+                className="absolute inset-0 overflow-hidden rounded-full"
                 style={{
                   filter: 'drop-shadow(0 0 30px rgba(233, 30, 140, 0.3)) drop-shadow(0 0 60px rgba(0, 184, 148, 0.2))',
                 }}
@@ -186,29 +186,32 @@ export function HeroSection({ onExplore, onReading, onSpinCycle }: HeroSectionPr
                 transition={{ duration: 90, repeat: Infinity, ease: "linear" }}
               >
                 <Image
-                  src="/images/portal-wheel.png"
+                  src="/images/portal-wheel-circle.png"
                   alt="ADINKRAROTA - Tarot + Adinkra Portal"
                   fill
-                  className="object-contain"
+                  className="object-cover"
+                  priority
                 />
               </motion.div>
               
-              {/* Inner wheel - counter-clockwise with opposite parallax */}
+              {/* Inner core - counter-clockwise, zoomed so it reads as one portal */}
               <motion.div
-                className="absolute inset-[18%] w-[64%] h-[64%] overflow-hidden rounded-full opacity-75 relative"
+                className="absolute left-1/2 top-1/2 h-[58%] w-[58%] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-full"
                 style={{
-                  filter: 'drop-shadow(0 0 20px rgba(0, 184, 148, 0.4)) brightness(1.1)',
-                  transform: `translate(${mousePosition.x * -0.05}px, ${mousePosition.y * -0.05}px)`,
+                  filter: 'drop-shadow(0 0 20px rgba(0, 184, 148, 0.4)) brightness(1.08)',
                 }}
                 animate={{ rotate: -360 }}
                 transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
               >
-                <Image
-                  src="/images/portal-wheel.png"
-                  alt=""
-                  fill
-                  className="object-contain"
-                />
+                <div className="absolute inset-0 origin-center scale-[1.72]">
+                  <Image
+                    src="/images/portal-wheel-circle.png"
+                    alt=""
+                    fill
+                    className="object-cover"
+                    aria-hidden
+                  />
+                </div>
               </motion.div>
             </motion.div>
           </motion.div>
