@@ -195,7 +195,7 @@ export function HeroSection({ onExplore, onReading, onSpinCycle }: HeroSectionPr
 
               {/* Front wheel — same size, counter-clockwise, transparent overlay */}
               <motion.div
-                className="absolute inset-0 overflow-hidden rounded-full opacity-60"
+                className="absolute inset-0 overflow-hidden rounded-full opacity-45"
                 style={{
                   filter: 'drop-shadow(0 0 20px rgba(0, 184, 148, 0.4)) brightness(1.08)',
                 }}
