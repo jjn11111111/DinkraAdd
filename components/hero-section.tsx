@@ -195,7 +195,7 @@ export function HeroSection({ onExplore, onReading, onSpinCycle }: HeroSectionPr
 
               {/* Front wheel — smaller, see-through, counter-clockwise */}
               <motion.div
-                className="absolute inset-0 overflow-hidden rounded-full opacity-70"
+                className="absolute inset-0 overflow-hidden rounded-full opacity-75"
                 style={{
                   filter: 'drop-shadow(0 0 20px rgba(0, 184, 148, 0.4)) brightness(1.08)',
                 }}
@@ -206,7 +206,7 @@ export function HeroSection({ onExplore, onReading, onSpinCycle }: HeroSectionPr
                 <img
                   src="/images/portal-wheel-circle.png"
                   alt="ADINKRAROTA - Tarot + Adinkra Portal"
-                  className="absolute top-1/2 left-1/2 h-[82%] w-auto max-w-none -translate-x-1/2 -translate-y-1/2"
+                  className="absolute top-1/2 left-1/2 h-[98%] w-auto max-w-none -translate-x-1/2 -translate-y-1/2"
                 />
               </motion.div>
             </motion.div>
