@@ -255,7 +255,7 @@ export function HeroSection({ onExplore, onReading, onSpinCycle }: HeroSectionPr
           transition={{ delay: 0.6 }}
           className="text-xl md:text-2xl text-muted-foreground font-serif mb-4 italic"
         >
-          Error Correction for the Soul
+          TAROT + ADINKRA
         </motion.p>
 
         {/* Description */}
