@@ -167,7 +167,7 @@ export function HeroSection({ onExplore, onReading, onSpinCycle }: HeroSectionPr
               transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 1 }}
             />
             
-            {/* Levitating Portal Wheels — shared center anchor, separate spin layers */}
+            {/* Levitating Portal Wheels — both layers anchored to the same center point */}
             <motion.div
               className="absolute inset-0 overflow-hidden rounded-full"
               animate={{ y: [-6, 6, -6] }}
@@ -177,9 +177,9 @@ export function HeroSection({ onExplore, onReading, onSpinCycle }: HeroSectionPr
               }}
             >
               {/* Back wheel — 33% larger, clockwise */}
-              <div className="absolute left-1/2 top-1/2 aspect-square w-[133%] -translate-x-1/2 -translate-y-1/2">
+              <div className="absolute inset-0 flex items-center justify-center">
                 <motion.div
-                  className="relative size-full"
+                  className="relative aspect-square w-[133%] max-w-none shrink-0"
                   style={{ originX: "50%", originY: "50%" }}
                   animate={{ rotate: 360 }}
                   transition={{ duration: 90, repeat: Infinity, ease: "linear" }}
@@ -188,16 +188,16 @@ export function HeroSection({ onExplore, onReading, onSpinCycle }: HeroSectionPr
                     src="/images/portal-wheel-circle.png"
                     alt=""
                     fill
-                    className="object-contain"
+                    className="object-contain object-center"
                     aria-hidden
                   />
                 </motion.div>
               </div>
 
               {/* Front wheel — smaller, see-through, counter-clockwise */}
-              <div className="absolute left-1/2 top-1/2 aspect-square w-[82%] -translate-x-1/2 -translate-y-1/2 opacity-70">
+              <div className="absolute inset-0 flex items-center justify-center">
                 <motion.div
-                  className="relative size-full"
+                  className="relative aspect-square w-[82%] max-w-none shrink-0 opacity-70"
                   style={{
                     originX: "50%",
                     originY: "50%",
@@ -210,7 +210,7 @@ export function HeroSection({ onExplore, onReading, onSpinCycle }: HeroSectionPr
                     src="/images/portal-wheel-circle.png"
                     alt="ADINKRAROTA - Tarot + Adinkra Portal"
                     fill
-                    className="object-contain"
+                    className="object-contain object-center"
                     priority
                   />
                 </motion.div>
