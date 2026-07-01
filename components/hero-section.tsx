@@ -265,8 +265,7 @@ export function HeroSection({ onExplore, onReading, onSpinCycle }: HeroSectionPr
           transition={{ delay: 0.8 }}
           className="text-base md:text-lg text-muted-foreground/80 font-serif max-w-2xl mx-auto mb-12 leading-relaxed"
         >
-          Journey through 78 cards where ancient West African wisdom meets timeless Tarot archetypes. 
-          Each card holds layered meanings, weaving Akan Adinkra symbols with cosmic insight.
+          Two ancient wisdom systems combine to form a reflective mirror of increased clarity. ADINKRAROTA is a modern, relevant, and powerful tool which unites the present moment collision of {'"'}Natural{'"'} and {'"'}Artificial{'"'} Intelligence.
         </motion.p>
 
         {/* CTA Buttons */}
