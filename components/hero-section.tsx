@@ -265,7 +265,7 @@ export function HeroSection({ onExplore, onReading, onSpinCycle }: HeroSectionPr
           transition={{ delay: 0.8 }}
           className="text-base md:text-lg text-muted-foreground/80 font-serif max-w-2xl mx-auto mb-12 leading-relaxed"
         >
-          Two ancient wisdom systems combine to form a reflective mirror of increased clarity. ADINKRAROTA is a modern, relevant, and powerful tool which unites the present moment collision of {'"'}Natural{'"'} and {'"'}Artificial{'"'} Intelligence.
+          ADINKRAROTA pairs two distinct wisdom systems. This union surfaces clearer insight and mirrors the marriage of natural and artificial intelligence in the present moment.
         </motion.p>
 
         {/* CTA Buttons */}
