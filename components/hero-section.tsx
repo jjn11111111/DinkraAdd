@@ -175,7 +175,7 @@ export function HeroSection({ onExplore, onReading, onSpinCycle }: HeroSectionPr
                 transform: `translate(${mousePosition.x * 0.08}px, ${mousePosition.y * 0.08}px)`,
               }}
             >
-              {/* Back wheel — 33% larger, clockwise */}
+              {/* Back wheel — same size, clockwise, full opacity */}
               <motion.div
                 className="absolute inset-0 overflow-hidden rounded-full"
                 style={{
@@ -189,13 +189,13 @@ export function HeroSection({ onExplore, onReading, onSpinCycle }: HeroSectionPr
                   src="/images/portal-wheel-circle.png"
                   alt=""
                   aria-hidden
-                  className="absolute top-1/2 left-1/2 h-[133%] w-auto max-w-none -translate-x-1/2 -translate-y-1/2"
+                  className="absolute top-1/2 left-1/2 h-full w-auto max-w-none -translate-x-1/2 -translate-y-1/2"
                 />
               </motion.div>
 
-              {/* Front wheel — smaller, see-through, counter-clockwise */}
+              {/* Front wheel — same size, counter-clockwise, transparent overlay */}
               <motion.div
-                className="absolute inset-0 overflow-hidden rounded-full opacity-75"
+                className="absolute inset-0 overflow-hidden rounded-full opacity-60"
                 style={{
                   filter: 'drop-shadow(0 0 20px rgba(0, 184, 148, 0.4)) brightness(1.08)',
                 }}
@@ -206,7 +206,7 @@ export function HeroSection({ onExplore, onReading, onSpinCycle }: HeroSectionPr
                 <img
                   src="/images/portal-wheel-circle.png"
                   alt="ADINKRAROTA - Tarot + Adinkra Portal"
-                  className="absolute top-1/2 left-1/2 h-[98%] w-auto max-w-none -translate-x-1/2 -translate-y-1/2"
+                  className="absolute top-1/2 left-1/2 h-full w-auto max-w-none -translate-x-1/2 -translate-y-1/2"
                 />
               </motion.div>
             </motion.div>
