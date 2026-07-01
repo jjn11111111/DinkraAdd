@@ -189,7 +189,7 @@ export function HeroSection({ onExplore, onReading, onSpinCycle }: HeroSectionPr
                   src="/images/portal-wheel-circle.png"
                   alt=""
                   aria-hidden
-                  className="absolute top-1/2 left-1/2 h-full w-auto max-w-none -translate-x-1/2 -translate-y-1/2"
+                  className="absolute inset-0 h-full w-full object-contain object-center"
                 />
               </motion.div>
 
@@ -206,7 +206,7 @@ export function HeroSection({ onExplore, onReading, onSpinCycle }: HeroSectionPr
                 <img
                   src="/images/portal-wheel-circle.png"
                   alt="ADINKRAROTA - Tarot + Adinkra Portal"
-                  className="absolute top-1/2 left-1/2 h-full w-auto max-w-none -translate-x-1/2 -translate-y-1/2"
+                  className="absolute inset-0 h-full w-full object-contain object-center"
                 />
               </motion.div>
             </motion.div>
