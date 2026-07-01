@@ -169,49 +169,44 @@ export function HeroSection({ onExplore, onReading, onSpinCycle }: HeroSectionPr
             
             {/* Levitating Portal Wheels with mouse response */}
             <motion.div
-              className="absolute inset-0"
+              className="absolute inset-0 overflow-hidden rounded-full"
               animate={{ y: [-6, 6, -6] }}
               transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
               style={{
                 transform: `translate(${mousePosition.x * 0.08}px, ${mousePosition.y * 0.08}px)`,
               }}
             >
-              {/* Outer wheel - clockwise */}
+              {/* Back wheel - 33% larger, spins clockwise */}
               <motion.div
-                className="absolute inset-0 overflow-hidden rounded-full"
-                style={{
-                  filter: 'drop-shadow(0 0 30px rgba(233, 30, 140, 0.3)) drop-shadow(0 0 60px rgba(0, 184, 148, 0.2))',
-                }}
+                className="absolute left-1/2 top-1/2 h-[133%] w-[133%] -translate-x-1/2 -translate-y-1/2"
                 animate={{ rotate: 360 }}
                 transition={{ duration: 90, repeat: Infinity, ease: "linear" }}
               >
                 <Image
                   src="/images/portal-wheel-circle.png"
-                  alt="ADINKRAROTA - Tarot + Adinkra Portal"
+                  alt=""
                   fill
-                  className="object-cover"
-                  priority
+                  className="object-contain"
+                  aria-hidden
                 />
               </motion.div>
-              
-              {/* Inner core - counter-clockwise, zoomed so it reads as one portal */}
+
+              {/* Front wheel - smaller, see-through, spins counter-clockwise */}
               <motion.div
-                className="absolute left-1/2 top-1/2 h-[58%] w-[58%] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-full"
+                className="absolute left-1/2 top-1/2 h-[82%] w-[82%] -translate-x-1/2 -translate-y-1/2 opacity-70"
                 style={{
-                  filter: 'drop-shadow(0 0 20px rgba(0, 184, 148, 0.4)) brightness(1.08)',
+                  filter: 'drop-shadow(0 0 24px rgba(233, 30, 140, 0.25)) drop-shadow(0 0 48px rgba(0, 184, 148, 0.15))',
                 }}
                 animate={{ rotate: -360 }}
                 transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
               >
-                <div className="absolute inset-0 origin-center scale-[1.72]">
-                  <Image
-                    src="/images/portal-wheel-circle.png"
-                    alt=""
-                    fill
-                    className="object-cover"
-                    aria-hidden
-                  />
-                </div>
+                <Image
+                  src="/images/portal-wheel-circle.png"
+                  alt="ADINKRAROTA - Tarot + Adinkra Portal"
+                  fill
+                  className="object-contain"
+                  priority
+                />
               </motion.div>
             </motion.div>
           </motion.div>
