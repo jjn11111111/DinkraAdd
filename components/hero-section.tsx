@@ -3,7 +3,6 @@
 import { motion, useScroll, useTransform, useSpring } from "framer-motion";
 import { ChevronDown, BookOpen, Sparkles, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import Image from "next/image";
 import { useMouseParallax } from "@/hooks/use-parallax";
 import { FloatingElement } from "@/components/parallax-layers";
 import { useRef } from "react";
@@ -167,9 +166,9 @@ export function HeroSection({ onExplore, onReading, onSpinCycle }: HeroSectionPr
               transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 1 }}
             />
             
-            {/* Both wheels share one image-space origin (hub at PNG center), not separate frames */}
+            {/* Portal wheels — centered on image midpoint (original img approach) */}
             <motion.div
-              className="absolute inset-0 overflow-hidden rounded-full"
+              className="absolute inset-0"
               animate={{ y: [-6, 6, -6] }}
               transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
               style={{
@@ -178,43 +177,36 @@ export function HeroSection({ onExplore, onReading, onSpinCycle }: HeroSectionPr
             >
               {/* Back wheel — 33% larger, clockwise */}
               <motion.div
-                className="absolute inset-0"
-                style={{ originX: "50%", originY: "50%" }}
-                animate={{ rotate: 360, scale: 1.33 }}
-                transition={{
-                  rotate: { duration: 90, repeat: Infinity, ease: "linear" },
-                  scale: { duration: 0 },
+                className="absolute inset-0 overflow-hidden rounded-full"
+                style={{
+                  filter: 'drop-shadow(0 0 30px rgba(233, 30, 140, 0.3)) drop-shadow(0 0 60px rgba(0, 184, 148, 0.2))',
                 }}
+                animate={{ rotate: 360 }}
+                transition={{ duration: 90, repeat: Infinity, ease: "linear" }}
               >
-                <Image
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
                   src="/images/portal-wheel-circle.png"
                   alt=""
-                  fill
-                  className="object-contain object-center"
                   aria-hidden
+                  className="absolute top-1/2 left-1/2 h-[133%] w-auto max-w-none -translate-x-1/2 -translate-y-1/2"
                 />
               </motion.div>
 
               {/* Front wheel — smaller, see-through, counter-clockwise */}
               <motion.div
-                className="absolute inset-0 opacity-70"
+                className="absolute inset-0 overflow-hidden rounded-full opacity-70"
                 style={{
-                  originX: "50%",
-                  originY: "50%",
-                  filter: "drop-shadow(0 0 24px rgba(233, 30, 140, 0.25)) drop-shadow(0 0 48px rgba(0, 184, 148, 0.15))",
+                  filter: 'drop-shadow(0 0 20px rgba(0, 184, 148, 0.4)) brightness(1.08)',
                 }}
-                animate={{ rotate: -360, scale: 0.82 }}
-                transition={{
-                  rotate: { duration: 60, repeat: Infinity, ease: "linear" },
-                  scale: { duration: 0 },
-                }}
+                animate={{ rotate: -360 }}
+                transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
               >
-                <Image
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
                   src="/images/portal-wheel-circle.png"
                   alt="ADINKRAROTA - Tarot + Adinkra Portal"
-                  fill
-                  className="object-contain object-center"
-                  priority
+                  className="absolute top-1/2 left-1/2 h-[82%] w-auto max-w-none -translate-x-1/2 -translate-y-1/2"
                 />
               </motion.div>
             </motion.div>
