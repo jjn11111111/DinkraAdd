@@ -486,8 +486,8 @@ function SpreadCard({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30, rotateY: 180 }}
-      animate={{ opacity: 1, y: 0, rotateY: isRevealed ? 0 : 180 }}
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.6, type: "spring" }}
       className="flex flex-col items-center"
     >
@@ -502,24 +502,28 @@ function SpreadCard({
       {/* Card */}
       <div className="perspective-1000 w-full max-w-[200px]">
         <motion.div
-          className="relative preserve-3d cursor-pointer"
+          className="relative preserve-3d cursor-pointer w-full aspect-[2/3]"
           animate={{ rotateY: isRevealed ? 0 : 180 }}
           transition={{ duration: 0.6, type: "spring" }}
           onClick={() => (isRevealed ? onSelect() : onReveal())}
         >
           {/* Card Front - rotated 180deg if reversed */}
-          <motion.div
-            className="w-full aspect-[2/3] rounded-lg overflow-hidden backface-hidden"
-            style={{ backfaceVisibility: "hidden" }}
-            animate={{ rotate: isRevealed && isReversed ? 180 : 0 }}
-            transition={{ delay: 0.3, duration: 0.5, type: "spring" }}
+          <div
+            className="absolute inset-0 rounded-lg overflow-hidden backface-hidden"
+            style={{ backfaceVisibility: "hidden", transform: "rotateY(0deg)" }}
           >
-            <CardThumbnail card={card} interactive={false} />
-          </motion.div>
+            <motion.div
+              className="w-full h-full"
+              animate={{ rotate: isRevealed && isReversed ? 180 : 0 }}
+              transition={{ delay: 0.3, duration: 0.5, type: "spring" }}
+            >
+              <CardThumbnail card={card} interactive={false} />
+            </motion.div>
+          </div>
 
           {/* Card Back */}
           <div
-            className="absolute inset-0 w-full aspect-[2/3] rounded-lg overflow-hidden backface-hidden mystical-border bg-card relative"
+            className="absolute inset-0 rounded-lg overflow-hidden backface-hidden mystical-border bg-card"
             style={{
               backfaceVisibility: "hidden",
               transform: "rotateY(180deg)",
