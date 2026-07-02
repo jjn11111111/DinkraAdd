@@ -10,7 +10,7 @@ import { AIReadingChat } from "./ai-reading-chat";
 import { CardPicker } from "./card-picker";
 import { ReadingGate } from "./reading-gate";
 import { useAuth } from "./auth-provider";
-import { drawCardsWithPolarity, type DrawnCard, suitInfo } from "@/lib/card-data";
+import { drawCardsWithPolarity, type DrawnCard, suitInfo, CARD_BACK_IMAGE } from "@/lib/card-data";
 import { getAISettings } from "@/lib/ai-settings";
 import type { CustomSpread } from "./spread-builder";
 import Image from "next/image";
@@ -526,7 +526,7 @@ function SpreadCard({
             }}
           >
             <Image
-              src="/images/guidebook/adinkra-symbols-grid.jpeg"
+              src={CARD_BACK_IMAGE}
               alt="Card back"
               fill
               className="object-contain"

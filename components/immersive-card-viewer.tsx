@@ -8,7 +8,7 @@ import { X, ZoomIn, ZoomOut, RotateCcw, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import type { CardType, DrawnCard } from "@/lib/card-data";
-import { suitInfo } from "@/lib/card-data";
+import { suitInfo, CARD_BACK_IMAGE } from "@/lib/card-data";
 
 // Helper to check if card has polarity (is a DrawnCard)
 function hasPolarity(card: CardType | DrawnCard): card is DrawnCard {
@@ -329,7 +329,7 @@ export function ImmersiveCardViewer({ card, onClose }: ImmersiveCardViewerProps)
               {/* Adinkra symbols grid background */}
               <div className="absolute inset-0 bg-card flex items-center justify-center relative">
                 <Image
-                  src="/images/guidebook/adinkra-symbols-grid.jpeg"
+                  src={CARD_BACK_IMAGE}
                   alt="Card back"
                   fill
                   className="object-contain"

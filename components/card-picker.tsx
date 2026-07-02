@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { X, RotateCcw, Sparkles } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { allCards, type CardType, type DrawnCard, type CardPolarity } from "@/lib/card-data";
+import { allCards, type CardType, type DrawnCard, type CardPolarity, CARD_BACK_IMAGE } from "@/lib/card-data";
 
 interface SpreadPosition {
   name: string;
@@ -292,7 +292,7 @@ function FaceDownCard({ card, polarity, isSelected, isRevealing, disabled, onCli
           style={{ backfaceVisibility: "hidden" }}
         >
           <Image
-            src="/images/guidebook/adinkra-symbols-grid.jpeg"
+            src={CARD_BACK_IMAGE}
             alt="Card back"
             fill
             className="object-cover"
