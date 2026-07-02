@@ -8,14 +8,16 @@ import { suitInfo } from "@/lib/card-data";
 
 interface CardThumbnailProps {
   card: CardType;
-  onClick: () => void;
+  onClick?: () => void;
+  /** When false, renders a div instead of a button (for nested card layouts). */
+  interactive?: boolean;
 }
 
-export function CardThumbnail({ card, onClick }: CardThumbnailProps) {
+export function CardThumbnail({ card, onClick, interactive = true }: CardThumbnailProps) {
   const suitData = suitInfo[card.suit];
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleMouseMove = (e: React.MouseEvent<HTMLElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = (e.clientX - rect.left - rect.width / 2) / rect.width;
     const y = (e.clientY - rect.top - rect.height / 2) / rect.height;
@@ -26,20 +28,21 @@ export function CardThumbnail({ card, onClick }: CardThumbnailProps) {
     setMousePosition({ x: 0, y: 0 });
   };
 
-  return (
-    <motion.button
-      onClick={onClick}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      className="relative w-full aspect-[2/3] rounded-lg overflow-hidden card-glow group perspective-1000"
-      whileHover={{ scale: 1.05, y: -8 }}
-      whileTap={{ scale: 0.98 }}
-      transition={{ type: "spring", stiffness: 300, damping: 20 }}
-      style={{
-        transform: `perspective(1000px) rotateX(${mousePosition.y * -10}deg) rotateY(${mousePosition.x * 10}deg)`,
-        transformStyle: "preserve-3d",
-      }}
-    >
+  const sharedProps = {
+    onMouseMove: handleMouseMove,
+    onMouseLeave: handleMouseLeave,
+    className: "relative w-full aspect-[2/3] rounded-lg overflow-hidden card-glow group perspective-1000",
+    whileHover: interactive ? { scale: 1.05, y: -8 } : undefined,
+    whileTap: interactive ? { scale: 0.98 } : undefined,
+    transition: { type: "spring" as const, stiffness: 300, damping: 20 },
+    style: {
+      transform: `perspective(1000px) rotateX(${mousePosition.y * -10}deg) rotateY(${mousePosition.x * 10}deg)`,
+      transformStyle: "preserve-3d" as const,
+    },
+  };
+
+  const content = (
+    <>
       {/* Card Image or Fallback Background */}
       {card.imageUrl ? (
         <div className="absolute inset-0 bg-card relative">
@@ -114,6 +117,16 @@ export function CardThumbnail({ card, onClick }: CardThumbnailProps) {
           background: `linear-gradient(105deg, transparent 40%, ${suitData.color}10 45%, ${suitData.color}20 50%, ${suitData.color}10 55%, transparent 60%)`,
         }}
       />
-    </motion.button>
+    </>
   );
+
+  if (interactive) {
+    return (
+      <motion.button {...sharedProps} onClick={onClick} type="button">
+        {content}
+      </motion.button>
+    );
+  }
+
+  return <motion.div {...sharedProps}>{content}</motion.div>;
 }
