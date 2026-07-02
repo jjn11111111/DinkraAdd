@@ -25,6 +25,9 @@ export type DrawnCard = CardType & {
   polarityKeywords: string[]; // Keywords for this specific polarity
 };
 
+/** Face-down card art — cyan Adinkra grid (separate from hero/guidebook background). */
+export const CARD_BACK_IMAGE = "/images/card-back.jpeg";
+
 // Major Arcana with Adinkra fusions
 export const majorArcana: CardType[] = [
   {
