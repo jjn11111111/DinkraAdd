@@ -9,6 +9,7 @@ import { ImmersiveCardViewer } from "./immersive-card-viewer";
 import { AIReadingChat } from "./ai-reading-chat";
 import { CardPicker } from "./card-picker";
 import { ReadingGate } from "./reading-gate";
+import { useAuth } from "./auth-provider";
 import { drawCardsWithPolarity, type DrawnCard, suitInfo } from "@/lib/card-data";
 import { getAISettings } from "@/lib/ai-settings";
 import type { CustomSpread } from "./spread-builder";
@@ -96,6 +97,7 @@ interface CardReadingProps {
 }
 
 export function CardReading({ customSpread, onBackToBuilder }: CardReadingProps) {
+  const { recordReading } = useAuth();
   const [spreadType, setSpreadType] = useState<SpreadType>(customSpread ? "custom" : "three");
   const [drawnCards, setDrawnCards] = useState<DrawnCard[]>([]);
   const [revealedIndices, setRevealedIndices] = useState<Set<number>>(new Set());
@@ -103,6 +105,7 @@ export function CardReading({ customSpread, onBackToBuilder }: CardReadingProps)
   const [isDrawing, setIsDrawing] = useState(false);
   const [showAIChat, setShowAIChat] = useState(false);
   const [showCardPicker, setShowCardPicker] = useState(false);
+  const [readingId, setReadingId] = useState<string | undefined>();
   const [hasAIConfigured, setHasAIConfigured] = useState(
     () => getAISettings()?.enabled ?? false,
   );
@@ -145,17 +148,36 @@ export function CardReading({ customSpread, onBackToBuilder }: CardReadingProps)
       }
     : spreadConfigs[spreadType as Exclude<SpreadType, "custom">];
 
+  const persistReading = useCallback(
+    async (cards: DrawnCard[]) => {
+      const id = await recordReading(
+        spreadType,
+        spread.name,
+        cards.map((card) => ({
+          id: card.id,
+          name: card.name,
+          polarity: card.polarity,
+          adinkraSymbol: card.adinkraSymbol,
+        })),
+      );
+      setReadingId(typeof id === "string" ? id : undefined);
+    },
+    [recordReading, spread.name, spreadType],
+  );
+
   const drawCards = useCallback(() => {
     setIsDrawing(true);
     setRevealedIndices(new Set());
     setAIDismissedForSpread(false);
+    setReadingId(undefined);
     
     setTimeout(() => {
       const cards = drawCardsWithPolarity(spread.positions.length);
       setDrawnCards(cards);
       setIsDrawing(false);
+      void persistReading(cards);
     }, 800);
-  }, [spread.positions.length]);
+  }, [spread.positions.length, persistReading]);
 
   const revealCard = (index: number) => {
     setRevealedIndices((prev) => new Set([...prev, index]));
@@ -171,6 +193,7 @@ export function CardReading({ customSpread, onBackToBuilder }: CardReadingProps)
     setShowAIChat(false);
     setAutoInterpret(false);
     setAIDismissedForSpread(false);
+    setReadingId(undefined);
   };
 
   const handleManualSelection = (cards: DrawnCard[]) => {
@@ -178,13 +201,12 @@ export function CardReading({ customSpread, onBackToBuilder }: CardReadingProps)
     setRevealedIndices(new Set(cards.map((_, i) => i)));
     setShowCardPicker(false);
     setAIDismissedForSpread(false);
+    setReadingId(undefined);
+    void persistReading(cards);
   };
 
-  // Determine if this spread type requires membership
-  const requiresMembership = spreadType === "celtic" || spreadType === "custom";
-
   return (
-    <ReadingGate spreadType={requiresMembership ? "celtic" : "single"}>
+    <ReadingGate spreadType={spreadType}>
       <div className="w-full max-w-6xl mx-auto px-6 py-12">
         {/* Back button for custom spreads */}
         {customSpread && onBackToBuilder && (
@@ -415,6 +437,7 @@ export function CardReading({ customSpread, onBackToBuilder }: CardReadingProps)
           positions={spread.positions}
           spreadName={spread.name}
           isVisible={showAIChat}
+          readingId={readingId}
           onClose={() => {
             setShowAIChat(false);
             setAutoInterpret(false);
@@ -491,7 +514,7 @@ function SpreadCard({
             animate={{ rotate: isRevealed && isReversed ? 180 : 0 }}
             transition={{ delay: 0.3, duration: 0.5, type: "spring" }}
           >
-            <CardThumbnail card={card} onClick={onSelect} />
+            <CardThumbnail card={card} interactive={false} />
           </motion.div>
 
           {/* Card Back */}
@@ -577,8 +600,6 @@ function CelticCrossLayout({
   const gridPositions = [
     { index: 4, gridArea: "1 / 2 / 2 / 3" }, // Above
     { index: 2, gridArea: "2 / 1 / 3 / 2" }, // Past
-    { index: 0, gridArea: "2 / 2 / 3 / 3", isCenter: true }, // Present
-    { index: 1, gridArea: "2 / 2 / 3 / 3", isCrossing: true }, // Challenge (crossing)
     { index: 3, gridArea: "2 / 3 / 3 / 4" }, // Future
     { index: 5, gridArea: "3 / 2 / 4 / 3" }, // Below
   ];
@@ -595,14 +616,8 @@ function CelticCrossLayout({
           gridTemplateRows: "repeat(3, auto)",
         }}
       >
-        {gridPositions.map(({ index, gridArea, isCenter, isCrossing }) => (
-          <div
-            key={index}
-            style={{ gridArea }}
-            className={`${isCrossing ? "absolute inset-0 rotate-90 scale-75 opacity-80" : ""} ${
-              isCenter ? "relative" : ""
-            }`}
-          >
+        {gridPositions.map(({ index, gridArea }) => (
+          <div key={index} style={{ gridArea }}>
             <SpreadCard
               card={cards[index]}
               position={positions[index]}
@@ -613,6 +628,30 @@ function CelticCrossLayout({
             />
           </div>
         ))}
+
+        {/* Present + Challenge share one centered cell */}
+        <div style={{ gridArea: "2 / 2 / 3 / 3" }} className="relative min-h-[280px]">
+          <SpreadCard
+            card={cards[0]}
+            position={positions[0]}
+            isRevealed={revealedIndices.has(0)}
+            onReveal={() => onReveal(0)}
+            onSelect={() => onSelect(cards[0])}
+            delay={0}
+          />
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="relative w-full max-w-[200px] rotate-90 scale-75 opacity-80 pointer-events-auto">
+              <SpreadCard
+                card={cards[1]}
+                position={positions[1]}
+                isRevealed={revealedIndices.has(1)}
+                onReveal={() => onReveal(1)}
+                onSelect={() => onSelect(cards[1])}
+                delay={0.1}
+              />
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Staff (right column) */}

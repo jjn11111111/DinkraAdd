@@ -2,7 +2,7 @@
 
 // ADINKRAROTA - Tarot + Adinkra Portal
 import { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Navigation } from "@/components/navigation";
 import { HeroSection } from "@/components/hero-section";
@@ -30,6 +30,7 @@ const PATH_TO_VIEW: Record<string, View> = {
 
 export default function AdinkrarotaApp() {
   const router = useRouter();
+  const pathname = usePathname();
   const { profile, isAuthenticated } = useAuth();
   const [currentView, setCurrentView] = useState<View>("home");
   const contentRef = useRef<HTMLDivElement>(null);
@@ -39,26 +40,15 @@ export default function AdinkrarotaApp() {
   const [activeSpread, setActiveSpread] = useState<CustomSpread | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Sync view with URL on mount and when URL changes
+  // Sync view with URL on mount and when pathname changes (including back/forward)
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    
-    const updateViewFromPath = () => {
-      const path = window.location.pathname;
-      const viewFromPath = PATH_TO_VIEW[path] || "home";
-      setCurrentView(viewFromPath);
-    };
-    
-    // Initial sync
-    updateViewFromPath();
-    
-    // Listen for browser back/forward navigation
-    window.addEventListener("popstate", updateViewFromPath);
-    
-    return () => {
-      window.removeEventListener("popstate", updateViewFromPath);
-    };
-  }, []);
+    const normalized =
+      pathname.length > 1 && pathname.endsWith("/")
+        ? pathname.slice(0, -1)
+        : pathname;
+    const viewFromPath = PATH_TO_VIEW[normalized] || "home";
+    setCurrentView(viewFromPath);
+  }, [pathname]);
 
   // Load spreads from localStorage on mount (client-side only)
   useEffect(() => {

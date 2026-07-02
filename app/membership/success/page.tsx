@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { getCheckoutSession } from "@/app/actions/stripe";
+import { syncMembershipFromStripe } from "@/app/actions/membership-sync";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Sparkles, Star, ArrowRight } from "lucide-react";
@@ -95,6 +96,7 @@ function SuccessContent() {
               account_type: "member",
             },
           });
+          await syncMembershipFromStripe();
         }
 
         setStatus("success");

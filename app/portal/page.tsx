@@ -277,7 +277,7 @@ export default function PortalPage() {
           transition={{ delay: 0.1 }}
           className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6"
         >
-          <Link href="/">
+          <Link href="/reading">
             <Button
               variant="outline"
               className="w-full h-auto py-4 flex flex-col items-center gap-2 bg-transparent hover:bg-primary/5"
@@ -286,7 +286,7 @@ export default function PortalPage() {
               <span className="text-xs">New Reading</span>
             </Button>
           </Link>
-          <Link href="/">
+          <Link href="/gallery">
             <Button
               variant="outline"
               className="w-full h-auto py-4 flex flex-col items-center gap-2 bg-transparent hover:bg-primary/5"

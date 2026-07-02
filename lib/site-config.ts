@@ -47,6 +47,10 @@ export function getBaseUrl(): string {
     return `https://${process.env.VERCEL_URL}`;
   }
 
+  if (process.env.NODE_ENV === "development") {
+    return "http://localhost:3000";
+  }
+
   // Hardcoded production fallback (matches Supabase site_url)
   return "https://adinkrarota.3eyecrosstrain.com";
 }
