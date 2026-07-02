@@ -8,9 +8,10 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import {
-  AUTH_UNAVAILABLE_DEPLOYER_HINT,
   AUTH_UNAVAILABLE_MESSAGE,
 } from "@/lib/auth-copy";
+import { AuthDeployerHint } from "@/components/auth-deployer-hint";
+import { useSupabaseReady } from "@/hooks/use-supabase-ready";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,6 +38,7 @@ import { DATA_PLEDGE, GUEST_YEARLY_READINGS } from "@/lib/products";
 function RegisterContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const supabaseReady = useSupabaseReady();
   const [isMembership, setIsMembership] = useState(searchParams.get("membership") === "true");
   
   // Form state
@@ -60,6 +62,10 @@ function RegisterContent() {
   useEffect(() => {
     setIsMembership(searchParams.get("membership") === "true");
   }, [searchParams]);
+
+  const configError =
+    supabaseReady === false ? AUTH_UNAVAILABLE_MESSAGE : null;
+  const displayError = error ?? configError;
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -430,16 +436,10 @@ function RegisterContent() {
               </AnimatePresence>
             </div>
 
-            {error && (
+            {displayError && (
               <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-sm">
-                {error}
-                {error === AUTH_UNAVAILABLE_MESSAGE && (
-                  <p className="mt-2 text-xs text-muted-foreground font-normal normal-case leading-snug border-t border-destructive/20 pt-2">
-                    <span className="whitespace-pre-line">
-                      {AUTH_UNAVAILABLE_DEPLOYER_HINT}
-                    </span>
-                  </p>
-                )}
+                {displayError}
+                {displayError === AUTH_UNAVAILABLE_MESSAGE && <AuthDeployerHint />}
               </div>
             )}
 

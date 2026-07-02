@@ -11,13 +11,23 @@ export const AUTH_UNAVAILABLE_MESSAGE =
  * - NEXT_PUBLIC_BASE_URL → optional; your own site's URL for redirects; does NOT replace Supabase.
  */
 export const AUTH_UNAVAILABLE_DEPLOYER_HINT = [
-  "DEPLOYER — The app cannot reach Supabase until BOTH variables below exist in Vercel → Settings → Environment Variables. Enable them for Production (and Preview if you use *.vercel.app previews). Then redeploy — Next.js only bakes these in at build time.",
+  "Add these in Vercel → Project → Settings → Environment Variables (Production + Preview). Then Redeploy once.",
   "",
-  "Required (without these, auth stays broken):",
-  "  • NEXT_PUBLIC_SUPABASE_URL — Supabase → Project Settings → API → Project URL (ends with .supabase.co — that is .co, not .com).",
-  "  • NEXT_PUBLIC_SUPABASE_ANON_KEY — same API page → anon / public key.",
+  "Required — use either naming style (not both):",
+  "  • NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_ANON_KEY",
+  "  • OR SUPABASE_URL + SUPABASE_ANON_KEY",
   "",
-  "Different variable (optional): NEXT_PUBLIC_BASE_URL is your live site URL for redirects. It does not substitute for the two Supabase variables above.",
+  "Values from Supabase → Project Settings → API:",
+  "  • Project URL (https://xxxxx.supabase.co — .co not .com)",
+  "  • anon / public key",
+  "",
+  "Also recommended:",
+  "  • SUPABASE_SERVICE_ROLE_KEY (server — webhooks, membership sync)",
+  "  • NEXT_PUBLIC_BASE_URL = your live site URL (e.g. https://dinkra-add.vercel.app)",
+  "",
+  "Supabase → Authentication → URL configuration must include:",
+  "  • Site URL = your production domain",
+  "  • Redirect URLs: https://YOUR_DOMAIN/auth/callback and https://*.vercel.app/**",
 ].join("\n");
 
 export const PAYMENT_UNAVAILABLE_MESSAGE =

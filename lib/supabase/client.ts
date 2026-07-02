@@ -2,8 +2,7 @@ import { createBrowserClient } from '@supabase/ssr'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { getBrowserAuthCookieOptions } from '@/lib/supabase/auth-cookie-options'
 import {
-  getPublicSupabaseConfig,
-  isSupabaseConfigured as hasEnv,
+  getClientSupabaseConfig,
 } from '@/lib/supabase/env'
 
 let client: SupabaseClient | null = null
@@ -26,7 +25,7 @@ export function createClient(): SupabaseClient | null {
     return client
   }
 
-  const cfg = getPublicSupabaseConfig()
+  const cfg = getClientSupabaseConfig()
   if (!cfg) {
     return null
   }
@@ -47,7 +46,7 @@ export function createClient(): SupabaseClient | null {
 }
 
 export function isSupabaseConfigured(): boolean {
-  return hasEnv()
+  return getClientSupabaseConfig() !== null
 }
 
 type AuthLockFunc = <R>(
@@ -67,7 +66,7 @@ const authCallbackLock: AuthLockFunc = async (_name, _acquireTimeout, fn) => fn(
  * visible. Not a singleton to avoid sharing initializePromise with AuthProvider.
  */
 export function createAuthCallbackClient(): SupabaseClient | null {
-  const cfg = getPublicSupabaseConfig()
+  const cfg = getClientSupabaseConfig()
   if (!cfg) {
     return null
   }

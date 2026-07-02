@@ -7,9 +7,10 @@ import { createClient } from "@/lib/supabase/client";
 import { createImplicitRecoveryClient } from "@/lib/supabase/recovery-email-client";
 import { getBaseUrl } from "@/lib/site-config";
 import {
-  AUTH_UNAVAILABLE_DEPLOYER_HINT,
   AUTH_UNAVAILABLE_MESSAGE,
 } from "@/lib/auth-copy";
+import { AuthDeployerHint } from "@/components/auth-deployer-hint";
+import { useSupabaseReady } from "@/hooks/use-supabase-ready";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -119,6 +120,7 @@ function RecoveryEmailTroubleshooting({ redirectTo }: { redirectTo: string }) {
 }
 
 export default function ForgotPasswordPage() {
+  const supabaseReady = useSupabaseReady();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -147,6 +149,10 @@ export default function ForgotPasswordPage() {
     const id = window.setInterval(tick, 500);
     return () => window.clearInterval(id);
   }, [cooldownUntil]);
+
+  const configError =
+    supabaseReady === false ? AUTH_UNAVAILABLE_MESSAGE : null;
+  const displayError = error ?? configError;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -264,18 +270,17 @@ export default function ForgotPasswordPage() {
                 />
               </div>
 
-              {error && (
+              {displayError && (
                 <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-sm">
-                  {error}
-                  {error === AUTH_UNAVAILABLE_MESSAGE && (
-                    <p className="mt-2 text-xs text-muted-foreground font-normal normal-case leading-snug border-t border-destructive/20 pt-2 whitespace-pre-line">
-                      {AUTH_UNAVAILABLE_DEPLOYER_HINT}
-                    </p>
-                  )}
-                  {(/security purposes|only request this after|request this after \d+|over_email_send_rate_limit|429/i.test(
-                    error,
-                  )) && <RateLimitHint />}
-                  {lastRedirectTo && looksLikeRecoverySendFailure(error) && (
+                  {displayError}
+                  {displayError === AUTH_UNAVAILABLE_MESSAGE && <AuthDeployerHint />}
+                  {(displayError &&
+                    /security purposes|only request this after|request this after \d+|over_email_send_rate_limit|429/i.test(
+                      displayError,
+                    )) && <RateLimitHint />}
+                  {lastRedirectTo &&
+                    displayError &&
+                    looksLikeRecoverySendFailure(displayError) && (
                     <RecoveryEmailTroubleshooting redirectTo={lastRedirectTo} />
                   )}
                 </div>
@@ -284,7 +289,7 @@ export default function ForgotPasswordPage() {
               <Button
                 type="submit"
                 className="w-full"
-                disabled={loading || cooldownLeft > 0}
+                disabled={loading || cooldownLeft > 0 || supabaseReady === false}
               >
                 {loading
                   ? "Sending…"
