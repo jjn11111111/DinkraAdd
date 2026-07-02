@@ -3,7 +3,6 @@
 import { motion, useScroll, useTransform, useSpring } from "framer-motion";
 import { ChevronDown, BookOpen, Sparkles, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import Image from "next/image";
 import { useMouseParallax } from "@/hooks/use-parallax";
 import { FloatingElement } from "@/components/parallax-layers";
 import { useRef } from "react";
@@ -167,7 +166,7 @@ export function HeroSection({ onExplore, onReading, onSpinCycle }: HeroSectionPr
               transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 1 }}
             />
             
-            {/* Levitating Portal Wheels with mouse response */}
+            {/* Portal wheels — centered on image midpoint (original img approach) */}
             <motion.div
               className="absolute inset-0"
               animate={{ y: [-6, 6, -6] }}
@@ -176,38 +175,38 @@ export function HeroSection({ onExplore, onReading, onSpinCycle }: HeroSectionPr
                 transform: `translate(${mousePosition.x * 0.08}px, ${mousePosition.y * 0.08}px)`,
               }}
             >
-              {/* Outer wheel - clockwise */}
+              {/* Back wheel — same size, clockwise, full opacity */}
               <motion.div
-                className="absolute inset-0 w-full h-full overflow-hidden rounded-full relative"
+                className="absolute inset-0 overflow-hidden rounded-full"
                 style={{
                   filter: 'drop-shadow(0 0 30px rgba(233, 30, 140, 0.3)) drop-shadow(0 0 60px rgba(0, 184, 148, 0.2))',
                 }}
                 animate={{ rotate: 360 }}
                 transition={{ duration: 90, repeat: Infinity, ease: "linear" }}
               >
-                <Image
-                  src="/images/portal-wheel.png"
-                  alt="ADINKRAROTA - Tarot + Adinkra Portal"
-                  fill
-                  className="object-contain"
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/images/portal-wheel-circle.png"
+                  alt=""
+                  aria-hidden
+                  className="absolute inset-0 h-full w-full object-contain object-center"
                 />
               </motion.div>
-              
-              {/* Inner wheel - counter-clockwise with opposite parallax */}
+
+              {/* Front wheel — same size, counter-clockwise, transparent overlay */}
               <motion.div
-                className="absolute inset-[18%] w-[64%] h-[64%] overflow-hidden rounded-full opacity-75 relative"
+                className="absolute inset-0 overflow-hidden rounded-full opacity-45"
                 style={{
-                  filter: 'drop-shadow(0 0 20px rgba(0, 184, 148, 0.4)) brightness(1.1)',
-                  transform: `translate(${mousePosition.x * -0.05}px, ${mousePosition.y * -0.05}px)`,
+                  filter: 'drop-shadow(0 0 20px rgba(0, 184, 148, 0.4)) brightness(1.08)',
                 }}
                 animate={{ rotate: -360 }}
                 transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
               >
-                <Image
-                  src="/images/portal-wheel.png"
-                  alt=""
-                  fill
-                  className="object-contain"
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/images/portal-wheel-circle.png"
+                  alt="ADINKRAROTA - Tarot + Adinkra Portal"
+                  className="absolute inset-0 h-full w-full object-contain object-center"
                 />
               </motion.div>
             </motion.div>
@@ -256,7 +255,7 @@ export function HeroSection({ onExplore, onReading, onSpinCycle }: HeroSectionPr
           transition={{ delay: 0.6 }}
           className="text-xl md:text-2xl text-muted-foreground font-serif mb-4 italic"
         >
-          Error Correction for the Soul
+          TAROT + ADINKRA
         </motion.p>
 
         {/* Description */}
@@ -266,8 +265,7 @@ export function HeroSection({ onExplore, onReading, onSpinCycle }: HeroSectionPr
           transition={{ delay: 0.8 }}
           className="text-base md:text-lg text-muted-foreground/80 font-serif max-w-2xl mx-auto mb-12 leading-relaxed"
         >
-          Journey through 78 cards where ancient West African wisdom meets timeless Tarot archetypes. 
-          Each card holds layered meanings, weaving Akan Adinkra symbols with cosmic insight.
+          ADINKRAROTA pairs two distinct wisdom systems. This union surfaces clearer insight and mirrors the marriage of natural and artificial intelligence in the present moment.
         </motion.p>
 
         {/* CTA Buttons */}
