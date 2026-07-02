@@ -7,9 +7,9 @@ import { motion } from "framer-motion";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { getBaseUrl } from "@/lib/site-config";
 import {
-  AUTH_UNAVAILABLE_DEPLOYER_HINT,
   AUTH_UNAVAILABLE_MESSAGE,
 } from "@/lib/auth-copy";
+import { AuthDeployerHint } from "@/components/auth-deployer-hint";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -213,10 +213,10 @@ function RegisterSuccessContent() {
                 Did not receive the confirmation email?
               </p>
               {!isSupabaseConfigured() ? (
-                <p className="text-sm text-amber-600 dark:text-amber-500 whitespace-pre-line">
-                  Resend is unavailable — Supabase client is not configured.{"\n\n"}
-                  {AUTH_UNAVAILABLE_DEPLOYER_HINT}
-                </p>
+                <div className="text-sm text-amber-600 dark:text-amber-500">
+                  <p>Resend is unavailable — Supabase is not configured on this deploy.</p>
+                  <AuthDeployerHint />
+                </div>
               ) : (
                 <>
                   <div className="flex flex-col gap-2">

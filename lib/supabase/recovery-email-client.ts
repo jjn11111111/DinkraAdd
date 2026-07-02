@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { getPublicSupabaseConfig } from "@/lib/supabase/env";
+import { getClientSupabaseConfig } from "@/lib/supabase/env";
 
 /**
  * Password reset only. @supabase/ssr createBrowserClient always sets flowType PKCE,
@@ -8,7 +8,7 @@ import { getPublicSupabaseConfig } from "@/lib/supabase/env";
  * in the URL hash) instead of ?code= PKCE.
  */
 export function createImplicitRecoveryClient() {
-  const cfg = getPublicSupabaseConfig();
+  const cfg = getClientSupabaseConfig();
   if (!cfg) return null;
 
   try {

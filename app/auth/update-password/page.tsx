@@ -6,9 +6,9 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import {
-  AUTH_UNAVAILABLE_DEPLOYER_HINT,
   AUTH_UNAVAILABLE_MESSAGE,
 } from "@/lib/auth-copy";
+import { AuthDeployerHint } from "@/components/auth-deployer-hint";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -156,9 +156,7 @@ export default function UpdatePasswordPage() {
         {supabaseMissing ? (
           <div className="p-6 rounded-2xl bg-card border border-destructive/30 text-destructive text-sm">
             {AUTH_UNAVAILABLE_MESSAGE}
-            <p className="mt-2 text-xs text-muted-foreground font-normal normal-case whitespace-pre-line">
-              {AUTH_UNAVAILABLE_DEPLOYER_HINT}
-            </p>
+            <AuthDeployerHint />
           </div>
         ) : !hasSession ? (
           <div className="p-6 rounded-2xl bg-card border border-border space-y-4 text-center">

@@ -5,6 +5,7 @@ import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import { AuthProvider } from '@/components/auth-provider'
 import { AuthReturnRedirect } from '@/components/auth-return-redirect'
+import { SupabaseRuntimeConfig } from '@/components/supabase-runtime-config'
 import { getConfiguredSiteOrigin } from '@/lib/site-config'
 
 const bebasNeue = Bebas_Neue({ 
@@ -68,6 +69,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className={`${bebasNeue.variable} ${oswald.variable} ${jost.variable} font-sans antialiased`}>
+        <SupabaseRuntimeConfig />
         <AuthReturnRedirect />
         <AuthProvider>{children}</AuthProvider>
         <Analytics />
