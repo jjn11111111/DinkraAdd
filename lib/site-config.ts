@@ -54,3 +54,33 @@ export function getBaseUrl(): string {
   // Hardcoded production fallback (matches Supabase site_url)
   return "https://adinkrarota.3eyecrosstrain.com";
 }
+
+/** Auth email links land here; must match Supabase Redirect URLs allowlist. */
+export function getAuthCallbackUrl(baseUrl?: string): string {
+  const base = (baseUrl ?? getBaseUrl()).replace(/\/$/, "");
+  return `${base}/auth/callback`;
+}
+
+/** Prefer Origin / forwarded host so preview deploys get the correct callback URL. */
+export function getOriginFromRequest(request: Request): string {
+  const origin = request.headers.get("origin")?.trim();
+  if (origin) {
+    try {
+      return new URL(origin).origin;
+    } catch {
+      /* fall through */
+    }
+  }
+
+  const host =
+    request.headers.get("x-forwarded-host")?.split(",")[0]?.trim() ||
+    request.headers.get("host")?.trim();
+  if (host) {
+    const proto =
+      request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() ||
+      "https";
+    return `${proto}://${host}`;
+  }
+
+  return getBaseUrl();
+}
