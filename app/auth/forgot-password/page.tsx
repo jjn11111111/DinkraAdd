@@ -3,9 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { createClient } from "@/lib/supabase/client";
-import { createImplicitRecoveryClient } from "@/lib/supabase/recovery-email-client";
-import { getBaseUrl } from "@/lib/site-config";
+import { getAuthCallbackUrl } from "@/lib/site-config";
 import {
   AUTH_UNAVAILABLE_MESSAGE,
 } from "@/lib/auth-copy";
@@ -14,7 +12,6 @@ import { useSupabaseReady } from "@/hooks/use-supabase-ready";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { isAuthError } from "@supabase/supabase-js";
 import { Sparkles, ArrowLeft } from "lucide-react";
 
 /** Supabase returns e.g. "…after 11 seconds" or code over_email_send_rate_limit. */
@@ -48,7 +45,25 @@ function looksLikeRecoverySendFailure(message: string): boolean {
   );
 }
 
-function RecoveryEmailTroubleshooting({ redirectTo }: { redirectTo: string }) {
+function looksLikeInvalidRedirectError(message: string): boolean {
+  return /invalid path specified|redirect.*not allowed|redirect_to/i.test(
+    message,
+  );
+}
+
+function looksLikeMisconfiguredSupabaseUrl(message: string): boolean {
+  return /supabase url looks misconfigured|supabase url is invalid/i.test(
+    message,
+  );
+}
+
+function RecoveryEmailTroubleshooting({
+  redirectTo,
+  invalidRedirect = false,
+}: {
+  redirectTo: string;
+  invalidRedirect?: boolean;
+}) {
   let origin = "";
   let onVercel = false;
   try {
@@ -61,45 +76,62 @@ function RecoveryEmailTroubleshooting({ redirectTo }: { redirectTo: string }) {
 
   return (
     <>
-      <p className="mt-2 text-xs text-muted-foreground font-normal normal-case leading-snug border-t border-destructive/20 pt-2">
-        Supabase could not send the reset email (server-side). In almost all
-        cases the dashboard shows why: open{" "}
-        <strong className="text-foreground/90">Logs</strong> → filter{" "}
-        <strong className="text-foreground/90">Auth</strong> (or{" "}
-        <strong className="text-foreground/90">Edge</strong> / API) and read
-        the latest error — often <code className="text-foreground/85">535</code>{" "}
-        (SMTP) or a blocked &quot;From&quot; address.
-      </p>
+      {invalidRedirect ? (
+        <p className="mt-2 text-xs text-muted-foreground font-normal normal-case leading-snug border-t border-destructive/20 pt-2">
+          Supabase rejected the redirect URL for this tab. In{" "}
+          <strong className="text-foreground/90">Authentication → URL configuration</strong>,
+          add the lines below under <strong>Redirect URLs</strong> (keep your production
+          domain as <strong>Site URL</strong>).
+        </p>
+      ) : (
+        <p className="mt-2 text-xs text-muted-foreground font-normal normal-case leading-snug border-t border-destructive/20 pt-2">
+          Supabase could not send the reset email (server-side). In almost all
+          cases the dashboard shows why: open{" "}
+          <strong className="text-foreground/90">Logs</strong> → filter{" "}
+          <strong className="text-foreground/90">Auth</strong> (or{" "}
+          <strong className="text-foreground/90">Edge</strong> / API) and read
+          the latest error — often <code className="text-foreground/85">535</code>{" "}
+          (SMTP) or a blocked &quot;From&quot; address.
+        </p>
+      )}
       <details className="mt-2 rounded-lg border border-destructive/25 bg-destructive/5 open:pb-2">
         <summary className="cursor-pointer list-none px-2 py-2 text-xs font-medium text-foreground/90 [&::-webkit-details-marker]:hidden">
           <span className="underline-offset-2 hover:underline">
-            Show SMTP &amp; redirect URL steps
+            {invalidRedirect
+              ? "Show redirect URL fix"
+              : "Show SMTP & redirect URL steps"}
           </span>
         </summary>
         <div className="space-y-2 px-2 pb-2 text-xs text-muted-foreground font-normal normal-case leading-snug border-t border-destructive/15 pt-2">
-          <p className="text-foreground/90 font-medium">Gmail (common fix for 535)</p>
-          <p>
-            Dashboard → <strong>Authentication</strong> → <strong>Emails</strong> →
-            Custom SMTP. Host <code className="text-foreground/85">smtp.gmail.com</code>
-            , port <code className="text-foreground/85">587</code>. Username and sender
-            = the same Gmail address. Password = Google{" "}
-            <strong>App password</strong> (not your normal Gmail password). See{" "}
-            <code className="text-foreground/85">SUPABASE_EMAIL_SETUP.md</code>.
-          </p>
-          <p className="text-foreground/90 font-medium pt-1">Other SMTP providers</p>
-          <p>
-            SendGrid, Amazon SES, or Resend as <strong>SMTP</strong> in the same
-            Supabase screen — use that provider&apos;s host, port, and credentials.
-          </p>
+          {!invalidRedirect && (
+            <>
+              <p className="text-foreground/90 font-medium">Gmail (common fix for 535)</p>
+              <p>
+                Dashboard → <strong>Authentication</strong> → <strong>Emails</strong> →
+                Custom SMTP. Host <code className="text-foreground/85">smtp.gmail.com</code>
+                , port <code className="text-foreground/85">587</code>. Username and sender
+                = the same Gmail address. Password = Google{" "}
+                <strong>App password</strong> (not your normal Gmail password). See{" "}
+                <code className="text-foreground/85">SUPABASE_EMAIL_SETUP.md</code>.
+              </p>
+              <p className="text-foreground/90 font-medium pt-1">Other SMTP providers</p>
+              <p>
+                SendGrid, Amazon SES, or Resend as <strong>SMTP</strong> in the same
+                Supabase screen — use that provider&apos;s host, port, and credentials.
+              </p>
+            </>
+          )}
           <p className="text-foreground/90 font-medium pt-1">Redirect URLs</p>
-          <p>Only needed if logs mention an invalid redirect. Add this line:</p>
-          <code className="block w-full p-2 rounded-md bg-muted text-foreground text-[11px] break-all border border-border">
+          <p>Add these under Supabase → Authentication → URL configuration:</p>
+          <code className="block w-full p-2 rounded-md bg-muted text-foreground text-[11px] break-all border border-border whitespace-pre-wrap">
             {redirectTo}
+            {"\n"}https://*.vercel.app/**
+            {"\n"}http://localhost:3000/auth/callback
           </code>
           {onVercel && (
             <p>
-              For previews, you can add{" "}
-              <code className="text-foreground/85">https://*.vercel.app/**</code>
+              Preview tabs like this one are covered by{" "}
+              <code className="text-foreground/85">https://*.vercel.app/**</code>.
             </p>
           )}
           <p>
@@ -157,42 +189,42 @@ export default function ForgotPasswordPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setLastRedirectTo(null);
     setLoading(true);
 
-    const supabase = createImplicitRecoveryClient() ?? createClient();
-    if (!supabase) {
-      setError(AUTH_UNAVAILABLE_MESSAGE);
-      setLoading(false);
-      return;
-    }
-
-    // Must match Redirect URLs (e.g. https://*.vercel.app/** for previews).
-    // next= forces update-password when JWT amr omits recovery (common); amr still used as fallback.
-    const base = getBaseUrl().replace(/\/$/, "");
-    const redirectTo = `${base}/auth/callback?next=${encodeURIComponent("/auth/update-password")}`;
+    const redirectTo = getAuthCallbackUrl();
     setLastRedirectTo(redirectTo);
 
-    const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-      email.trim().toLowerCase(),
-      { redirectTo }
-    );
+    try {
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim().toLowerCase() }),
+      });
 
-    if (resetError) {
-      let msg = resetError.message;
-      if (isAuthError(resetError)) {
-        const bits = [resetError.status, resetError.code].filter(Boolean);
-        if (bits.length) {
-          msg = `${msg} (${bits.join(" · ")})`;
+      const data = (await res.json().catch(() => null)) as
+        | { error?: string; redirectTo?: string }
+        | null;
+
+      if (typeof data?.redirectTo === "string") {
+        setLastRedirectTo(data.redirectTo);
+      }
+
+      if (!res.ok) {
+        const msg =
+          typeof data?.error === "string" && data.error.trim()
+            ? data.error
+            : "Could not send reset email. Please try again.";
+        setLoading(false);
+        setError(msg);
+        const wait = parseRateLimitCooldownSeconds(msg);
+        if (wait != null) {
+          setCooldownUntil(Date.now() + wait * 1000);
         }
+        return;
       }
-
+    } catch {
       setLoading(false);
-      setError(msg);
-      const wait = parseRateLimitCooldownSeconds(msg);
-      if (wait != null) {
-        setCooldownUntil(Date.now() + wait * 1000);
-      }
+      setError("Network error. Check your connection and try again.");
       return;
     }
 
@@ -274,14 +306,21 @@ export default function ForgotPasswordPage() {
                 <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-sm">
                   {displayError}
                   {displayError === AUTH_UNAVAILABLE_MESSAGE && <AuthDeployerHint />}
+                  {looksLikeMisconfiguredSupabaseUrl(displayError ?? "") && (
+                    <AuthDeployerHint />
+                  )}
                   {(displayError &&
                     /security purposes|only request this after|request this after \d+|over_email_send_rate_limit|429/i.test(
                       displayError,
                     )) && <RateLimitHint />}
                   {lastRedirectTo &&
                     displayError &&
-                    looksLikeRecoverySendFailure(displayError) && (
-                    <RecoveryEmailTroubleshooting redirectTo={lastRedirectTo} />
+                    (looksLikeRecoverySendFailure(displayError) ||
+                      looksLikeInvalidRedirectError(displayError)) && (
+                    <RecoveryEmailTroubleshooting
+                      redirectTo={lastRedirectTo}
+                      invalidRedirect={looksLikeInvalidRedirectError(displayError)}
+                    />
                   )}
                 </div>
               )}

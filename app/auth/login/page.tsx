@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
-import { getBaseUrl } from "@/lib/site-config";
+import { getAuthCallbackUrl } from "@/lib/site-config";
 import {
   AUTH_UNAVAILABLE_MESSAGE,
 } from "@/lib/auth-copy";
@@ -56,7 +56,7 @@ export default function LoginPage() {
     setResendStatus("sending");
 
     // Defer to next tick so UI can paint "Sending..." before async work (fixes INP)
-    const redirectUrl = `${getBaseUrl()}/auth/callback`;
+    const redirectUrl = getAuthCallbackUrl();
     supabase.auth
       .resend({
         type: "signup",
