@@ -155,6 +155,13 @@ export default function PortalPage() {
     }
   };
 
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && profile && profile.accountType !== "member") {
+      void handleRestoreMembership();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading, isAuthenticated, profile?.accountType]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">

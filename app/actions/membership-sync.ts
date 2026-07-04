@@ -76,16 +76,36 @@ export async function syncMembershipFromStripe(): Promise<SyncMembershipResult> 
   const persistMember = async (opts: {
     subscriptionId: string;
     customerId: string | null;
-  }) => {
-    await admin
+  }): Promise<boolean> => {
+    const { error: profileError } = await admin
       .from("profiles")
       .update({
         account_type: "member",
+        membership_purchased_at: new Date().toISOString(),
         stripe_payment_id: opts.subscriptionId,
         ...(opts.customerId ? { stripe_customer_id: opts.customerId } : {}),
         updated_at: new Date().toISOString(),
       })
       .eq("id", user.id);
+
+    if (profileError) {
+      console.error("persistMember profile update failed:", profileError.message);
+      return false;
+    }
+
+    // Keep auth metadata aligned so UI reflects member even before profile re-fetch.
+    try {
+      await admin.auth.admin.updateUserById(user.id, {
+        user_metadata: {
+          ...user.user_metadata,
+          account_type: "member",
+        },
+      });
+    } catch (metaErr) {
+      console.error("persistMember metadata update failed:", metaErr);
+    }
+
+    return true;
   };
 
   const isActive = (status: string) =>
@@ -105,8 +125,10 @@ export async function syncMembershipFromStripe(): Promise<SyncMembershipResult> 
           typeof sub.customer === "string"
             ? sub.customer
             : sub.customer?.id ?? null;
-        await persistMember({ subscriptionId: sub.id, customerId: cust });
-        return { ok: true, status: "updated_member" };
+        const ok = await persistMember({ subscriptionId: sub.id, customerId: cust });
+        return ok
+          ? { ok: true, status: "updated_member" }
+          : { ok: false, error: "Could not update your membership profile." };
       }
     }
 
@@ -122,17 +144,20 @@ export async function syncMembershipFromStripe(): Promise<SyncMembershipResult> 
       });
       const hit = subs.data.find((s) => isActive(s.status));
       if (hit) {
-        await persistMember({
+        const ok = await persistMember({
           subscriptionId: hit.id,
           customerId,
         });
-        return { ok: true, status: "updated_member" };
+        return ok
+          ? { ok: true, status: "updated_member" }
+          : { ok: false, error: "Could not update your membership profile." };
       }
     }
 
-    if (user.email) {
+    const email = user.email?.trim().toLowerCase();
+    if (email) {
       const customers = await stripe.customers.list({
-        email: user.email,
+        email,
         limit: 5,
       });
       for (const c of customers.data) {
@@ -142,11 +167,13 @@ export async function syncMembershipFromStripe(): Promise<SyncMembershipResult> 
         });
         const hit = subs.data.find((s) => isActive(s.status));
         if (hit) {
-          await persistMember({
+          const ok = await persistMember({
             subscriptionId: hit.id,
             customerId: c.id,
           });
-          return { ok: true, status: "updated_member" };
+          return ok
+            ? { ok: true, status: "updated_member" }
+            : { ok: false, error: "Could not update your membership profile." };
         }
       }
     }

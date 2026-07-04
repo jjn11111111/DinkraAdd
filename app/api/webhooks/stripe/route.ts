@@ -26,6 +26,48 @@ function invoiceCustomerId(invoice: Stripe.Invoice): string | null {
   );
 }
 
+async function promoteProfileToMember(
+  supabaseAdmin: NonNullable<ReturnType<typeof getSupabaseAdmin>>,
+  userId: string,
+  opts: { subscriptionId: string; customerId: string | null },
+) {
+  const { error } = await supabaseAdmin
+    .from("profiles")
+    .update({
+      account_type: "member",
+      membership_purchased_at: new Date().toISOString(),
+      stripe_customer_id: opts.customerId,
+      stripe_payment_id: opts.subscriptionId,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", userId);
+
+  if (error) {
+    console.error("Error updating profile:", error);
+    return;
+  }
+
+  try {
+    await supabaseAdmin.auth.admin.updateUserById(userId, {
+      user_metadata: { account_type: "member" },
+    });
+  } catch (metaErr) {
+    console.error("Error updating auth metadata:", metaErr);
+  }
+
+  console.log(`User ${userId} promoted to member (sub ${opts.subscriptionId})`);
+}
+
+function subscriptionCustomerId(subscription: Stripe.Subscription): string | null {
+  return typeof subscription.customer === "string"
+    ? subscription.customer
+    : subscription.customer?.id ?? null;
+}
+
+function isActiveSubscriptionStatus(status: Stripe.Subscription.Status): boolean {
+  return status === "active" || status === "trialing";
+}
+
 export async function POST(request: Request) {
   if (!isStripeConfigured() || !stripe) {
     return NextResponse.json({ error: "Service unavailable" }, { status: 503 });
@@ -89,25 +131,31 @@ export async function POST(request: Request) {
 
     if (userId && subscriptionId && session.status === "complete" && (paid || subscriptionCheckoutOk)) {
       try {
-        // Update user profile to member
-        const { error } = await supabaseAdmin
-          .from("profiles")
-          .update({
-            account_type: "member",
-            membership_purchased_at: new Date().toISOString(),
-            stripe_customer_id: session.customer as string || null,
-            stripe_payment_id: subscriptionId, // Store subscription ID instead of payment intent
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", userId);
-
-        if (error) {
-          console.error("Error updating profile:", error);
-        } else {
-          console.log(`User ${userId} subscribed to membership`);
-        }
+        await promoteProfileToMember(supabaseAdmin, userId, {
+          subscriptionId,
+          customerId:
+            typeof session.customer === "string" ? session.customer : null,
+        });
       } catch (err) {
         console.error("Webhook handler error:", err);
+      }
+    }
+  }
+
+  if (
+    event.type === "customer.subscription.created" ||
+    event.type === "customer.subscription.updated"
+  ) {
+    const subscription = event.data.object as Stripe.Subscription;
+    const userId = subscription.metadata?.userId;
+    if (userId && isActiveSubscriptionStatus(subscription.status)) {
+      try {
+        await promoteProfileToMember(supabaseAdmin, userId, {
+          subscriptionId: subscription.id,
+          customerId: subscriptionCustomerId(subscription),
+        });
+      } catch (err) {
+        console.error("Subscription webhook handler error:", err);
       }
     }
   }
