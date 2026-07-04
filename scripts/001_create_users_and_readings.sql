@@ -6,8 +6,8 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   email text not null,
   
-  -- Account type: 'guest' (free, 7 readings/year) or 'member' (paid, daily readings)
-  account_type text not null default 'guest' check (account_type in ('guest', 'member')),
+  -- Account type: guest | member | member_pending (awaiting Stripe checkout)
+  account_type text not null default 'guest' check (account_type in ('guest', 'member', 'member_pending')),
   
   -- Member-only fields (encrypted/protected)
   birth_name text,
@@ -197,21 +197,31 @@ set search_path = public
 as $$
 begin
   insert into public.profiles (
-    id, 
-    email, 
+    id,
+    email,
     account_type,
+    birth_name,
+    birth_date,
+    birth_time,
+    birth_place,
+    gender,
     year_started,
     readings_this_year
   )
   values (
     new.id,
-    new.email,
+    coalesce(new.email, new.raw_user_meta_data->>'email', ''),
     'guest',
-    extract(year from now()),
+    nullif(new.raw_user_meta_data->>'birth_name', ''),
+    nullif(new.raw_user_meta_data->>'birth_date', '')::date,
+    nullif(new.raw_user_meta_data->>'birth_time', '')::time,
+    nullif(new.raw_user_meta_data->>'birth_place', ''),
+    nullif(new.raw_user_meta_data->>'gender', ''),
+    extract(year from now())::integer,
     0
   )
   on conflict (id) do nothing;
-  
+
   return new;
 end;
 $$;
