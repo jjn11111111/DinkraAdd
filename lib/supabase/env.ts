@@ -2,17 +2,35 @@ export type PublicSupabaseConfig = { url: string; anonKey: string };
 
 export const SUPABASE_RUNTIME_GLOBAL = "__ADINKRAROTA_SUPABASE__";
 
+/**
+ * Supabase clients expect the project origin (e.g. https://xxx.supabase.co).
+ * Dashboard/API docs sometimes expose PostgREST paths — strip those if pasted.
+ */
+export function normalizeSupabaseProjectUrl(url: string): string | null {
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+  if (!(trimmed.startsWith("http://") || trimmed.startsWith("https://"))) {
+    return null;
+  }
+
+  try {
+    return new URL(trimmed).origin;
+  } catch {
+    return null;
+  }
+}
+
 function parseSupabaseConfig(
   url: string | undefined,
   anonKey: string | undefined,
 ): PublicSupabaseConfig | null {
-  const trimmedUrl = url?.trim();
   const trimmedKey = anonKey?.trim();
-  if (!trimmedUrl || !trimmedKey) return null;
-  if (!(trimmedUrl.startsWith("http://") || trimmedUrl.startsWith("https://"))) {
-    return null;
-  }
-  return { url: trimmedUrl, anonKey: trimmedKey };
+  if (!url?.trim() || !trimmedKey) return null;
+
+  const normalizedUrl = normalizeSupabaseProjectUrl(url);
+  if (!normalizedUrl) return null;
+
+  return { url: normalizedUrl, anonKey: trimmedKey };
 }
 
 /** NEXT_PUBLIC_* — inlined in the client bundle at build time. */
@@ -44,7 +62,9 @@ export function getClientSupabaseConfig(): PublicSupabaseConfig | null {
       | PublicSupabaseConfig
       | undefined;
     if (injected?.url && injected?.anonKey) {
-      return injected;
+      return (
+        parseSupabaseConfig(injected.url, injected.anonKey) ?? injected
+      );
     }
   }
   return getPublicSupabaseConfig();
