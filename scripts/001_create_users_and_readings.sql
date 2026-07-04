@@ -195,18 +195,7 @@ language plpgsql
 security definer
 set search_path = public
 as $$
-declare
-  meta_account_type text;
-  profile_account_type text;
 begin
-  meta_account_type := coalesce(new.raw_user_meta_data->>'account_type', 'guest');
-
-  profile_account_type := case
-    when meta_account_type = 'member' then 'member'
-    when meta_account_type = 'member_pending' then 'member_pending'
-    else 'guest'
-  end;
-
   insert into public.profiles (
     id,
     email,
@@ -222,7 +211,7 @@ begin
   values (
     new.id,
     coalesce(new.email, new.raw_user_meta_data->>'email', ''),
-    profile_account_type,
+    'guest',
     nullif(new.raw_user_meta_data->>'birth_name', ''),
     nullif(new.raw_user_meta_data->>'birth_date', '')::date,
     nullif(new.raw_user_meta_data->>'birth_time', '')::time,

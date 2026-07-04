@@ -13,6 +13,8 @@ import { usePathname } from "next/navigation";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import { syncMembershipFromStripe } from "@/app/actions/membership-sync";
+import { ensureUserProfile } from "@/app/actions/ensure-profile";
+import { userWantsMembershipCheckout } from "@/lib/auth/registration-intent";
 
 export type AccountType = "guest" | "member";
 
@@ -164,8 +166,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ) {
         return;
       }
-      const pendingCheckout =
-        currentUser.user_metadata?.account_type === "member_pending";
+      const pendingCheckout = userWantsMembershipCheckout(
+        currentUser.user_metadata,
+      );
       if (!force && !pendingCheckout && guestMembershipSyncDone.current) return;
 
       try {
@@ -237,6 +240,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (currentUser) {
           void (async () => {
+            await ensureUserProfile();
             const userProfile = await fetchProfile(currentUser!);
             setProfile(userProfile);
             void tryStripeMembershipSync(currentUser!, userProfile);
@@ -255,6 +259,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (session?.user) {
         setProfile(optimisticProfileFromUser(session.user));
         void (async () => {
+          await ensureUserProfile();
           const userProfile = await fetchProfile(session.user);
           setProfile(userProfile);
           void tryStripeMembershipSync(session.user, userProfile);

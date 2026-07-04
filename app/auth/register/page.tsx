@@ -34,6 +34,8 @@ import {
   Info,
 } from "lucide-react";
 import { DATA_PLEDGE, GUEST_YEARLY_READINGS } from "@/lib/products";
+import { mapAuthErrorMessage } from "@/lib/auth/map-auth-error";
+import { REGISTRATION_INTENT_MEMBER } from "@/lib/auth/registration-intent";
 
 function RegisterContent() {
   const router = useRouter();
@@ -113,7 +115,11 @@ function RegisterContent() {
       options: {
         emailRedirectTo: redirectUrl,
         data: {
-          account_type: isMembership ? "member_pending" : "guest",
+          // Profile row must stay guest until Stripe/webhook promotes — never member_pending here.
+          account_type: "guest",
+          ...(isMembership
+            ? { registration_intent: REGISTRATION_INTENT_MEMBER }
+            : {}),
           birth_name: isMembership ? birthName : null,
           birth_date: isMembership ? birthDate : null,
           birth_time: isMembership ? birthTime : null,
@@ -124,7 +130,7 @@ function RegisterContent() {
     });
 
     if (error) {
-      setError(error.message);
+      setError(mapAuthErrorMessage(error.message));
       setLoading(false);
       return;
     }

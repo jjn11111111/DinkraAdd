@@ -1,11 +1,11 @@
--- Fix "Database error saving new user" when registering as Member.
+-- Fix "Database error saving new user" and harden signup for production.
 --
--- Cause: handle_new_user copied account_type = member_pending into profiles, but
--- profiles_account_type_check only allowed guest | member.
+-- Profiles.account_type is ONLY guest until Stripe/webhook promotes to member.
+-- registration_intent lives in auth user_metadata (app-controlled routing).
 --
--- Run once in Supabase Dashboard → SQL Editor (Production + any Preview DB).
+-- Run once in Supabase Dashboard → SQL Editor (Production + Preview).
 
--- 1. Allow member_pending in profiles (transient state before Stripe checkout)
+-- 1. Ensure constraint allows legacy rows; new signups always get guest in profiles
 alter table public.profiles
   drop constraint if exists profiles_account_type_check;
 
@@ -13,25 +13,14 @@ alter table public.profiles
   add constraint profiles_account_type_check
   check (account_type in ('guest', 'member', 'member_pending'));
 
--- 2. Signup trigger: always create a valid profile row; copy birth fields from auth metadata
+-- 2. Signup trigger: guest profile + birth fields from metadata (never member_pending in DB)
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
 security definer
 set search_path = public
 as $$
-declare
-  meta_account_type text;
-  profile_account_type text;
 begin
-  meta_account_type := coalesce(new.raw_user_meta_data->>'account_type', 'guest');
-
-  profile_account_type := case
-    when meta_account_type = 'member' then 'member'
-    when meta_account_type = 'member_pending' then 'member_pending'
-    else 'guest'
-  end;
-
   insert into public.profiles (
     id,
     email,
@@ -49,7 +38,7 @@ begin
   values (
     new.id,
     coalesce(new.email, new.raw_user_meta_data->>'email', ''),
-    profile_account_type,
+    'guest',
     nullif(new.raw_user_meta_data->>'birth_name', ''),
     nullif(new.raw_user_meta_data->>'birth_date', '')::date,
     nullif(new.raw_user_meta_data->>'birth_time', '')::time,
@@ -71,3 +60,8 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row
   execute function public.handle_new_user();
+
+-- 3. Normalize any legacy member_pending rows to guest (intent stays in auth metadata)
+update public.profiles
+set account_type = 'guest', updated_at = now()
+where account_type = 'member_pending';
