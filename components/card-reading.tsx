@@ -519,7 +519,7 @@ function SpreadCard({
 
           {/* Card Back */}
           <div
-            className="absolute inset-0 w-full aspect-[2/3] rounded-lg overflow-hidden backface-hidden mystical-border bg-card relative"
+            className="absolute inset-0 w-full aspect-[2/3] rounded-lg overflow-hidden backface-hidden mystical-border bg-card"
             style={{
               backfaceVisibility: "hidden",
               transform: "rotateY(180deg)",
