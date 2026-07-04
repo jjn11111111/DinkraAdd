@@ -237,16 +237,17 @@ export function ImmersiveCardViewer({ card, onClose }: ImmersiveCardViewerProps)
             >
               {/* Card Image or Fallback */}
               {card.imageUrl ? (
-                <div 
-                  className={`absolute inset-0 bg-card flex items-center justify-center transition-transform duration-500 relative ${
+                <div
+                  className={`absolute inset-0 bg-card transition-transform duration-500 ${
                     isReversed ? "rotate-180" : ""
                   }`}
                 >
                   <Image
-                    src={card.imageUrl || "/placeholder.svg"}
+                    src={card.imageUrl}
                     alt={card.name}
                     fill
                     className="object-contain"
+                    sizes="(max-width: 768px) 300px, 350px"
                   />
                 </div>
               ) : (
@@ -327,12 +328,13 @@ export function ImmersiveCardViewer({ card, onClose }: ImmersiveCardViewerProps)
               }}
             >
               {/* Adinkra symbols grid background */}
-              <div className="absolute inset-0 bg-card flex items-center justify-center relative">
+              <div className="absolute inset-0 bg-card">
                 <Image
                   src={CARD_BACK_IMAGE}
                   alt="Card back"
                   fill
                   className="object-contain"
+                  sizes="(max-width: 768px) 300px, 350px"
                 />
               </div>
               <div className="absolute inset-2 border border-primary/30 rounded-lg" />

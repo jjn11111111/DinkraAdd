@@ -288,7 +288,7 @@ function FaceDownCard({ card, polarity, isSelected, isRevealing, disabled, onCli
       >
         {/* Card Back (face-down) */}
         <div
-          className="absolute inset-0 w-full h-full rounded-md overflow-hidden border border-primary/30 relative"
+          className="absolute inset-0 w-full h-full rounded-md overflow-hidden border border-primary/30"
           style={{ backfaceVisibility: "hidden" }}
         >
           <Image
@@ -307,7 +307,7 @@ function FaceDownCard({ card, polarity, isSelected, isRevealing, disabled, onCli
 
         {/* Card Front (revealed) */}
         <div
-          className="absolute inset-0 w-full h-full rounded-md overflow-hidden border-2 border-primary bg-card relative"
+          className="absolute inset-0 w-full h-full rounded-md overflow-hidden border-2 border-primary bg-card"
           style={{ 
             backfaceVisibility: "hidden",
             transform: "rotateY(180deg)"
@@ -315,10 +315,11 @@ function FaceDownCard({ card, polarity, isSelected, isRevealing, disabled, onCli
         >
           {card.imageUrl ? (
             <Image
-              src={card.imageUrl || "/placeholder.svg"}
+              src={card.imageUrl}
               alt={card.name}
               fill
               className={`object-contain ${isReversed ? "rotate-180" : ""}`}
+              sizes="80px"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-card p-1">
