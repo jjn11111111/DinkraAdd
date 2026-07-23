@@ -3,7 +3,6 @@
 import React from "react"
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
@@ -29,7 +28,6 @@ function safeNextPath(raw: string | null): string | null {
 }
 
 export default function LoginPage() {
-  const router = useRouter();
   const supabaseReady = useSupabaseReady();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -87,7 +85,7 @@ export default function LoginPage() {
       return;
     }
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -98,17 +96,21 @@ export default function LoginPage() {
       return;
     }
 
+    // Wait until the session cookie exists before navigating — avoids portal bounce loop.
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) {
+      setError("Sign-in succeeded but the session did not start. Please try again.");
+      setLoading(false);
+      return;
+    }
+
     const next = safeNextPath(
       typeof window !== "undefined"
         ? new URLSearchParams(window.location.search).get("next")
         : null,
     );
     setLoading(false);
-    router.push(next ?? "/portal");
-    // Defer RSC refresh so navigation paints first (avoids feeling "stuck" on sign-in).
-    queueMicrotask(() => {
-      router.refresh();
-    });
+    window.location.assign(next ?? "/portal");
   };
 
   return (

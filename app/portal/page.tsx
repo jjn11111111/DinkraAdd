@@ -59,9 +59,29 @@ export default function PortalPage() {
   const [membershipSyncMessage, setMembershipSyncMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.push("/auth/login");
+    if (isLoading) return;
+    if (isAuthenticated) return;
+
+    let cancelled = false;
+
+    async function verifySession() {
+      const supabase = createClient();
+      if (!supabase) {
+        if (!cancelled) router.push("/auth/login");
+        return;
+      }
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!cancelled && !session) {
+        router.push("/auth/login");
+      }
     }
+
+    void verifySession();
+
+    return () => {
+      cancelled = true;
+    };
   }, [isLoading, isAuthenticated, router]);
 
   // Fetch reading history
