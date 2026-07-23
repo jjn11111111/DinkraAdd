@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, Sparkles, ArrowLeft } from "lucide-react";
+import { mapAuthErrorMessage } from "@/lib/auth/map-auth-error";
 
 /** Internal paths only — avoids open redirects from ?next= */
 function safeNextPath(raw: string | null): string | null {
@@ -92,7 +93,7 @@ export default function LoginPage() {
     });
 
     if (error) {
-      setError(error.message);
+      setError(mapAuthErrorMessage(error.message));
       setLoading(false);
       return;
     }

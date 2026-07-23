@@ -1,5 +1,6 @@
 import type { Session } from "@supabase/supabase-js";
 import { accessTokenHasAmrMethod } from "@/lib/supabase/access-token-amr";
+import { userWantsMembershipCheckout } from "@/lib/auth/registration-intent";
 
 export const EMAIL_OTP_TYPES: Set<string> = new Set([
   "signup",
@@ -35,7 +36,7 @@ export function finalizeAuthRedirectPath(
 
   const user = session.user;
 
-  if (user?.user_metadata?.account_type === "member_pending") {
+  if (userWantsMembershipCheckout(user?.user_metadata)) {
     return "/membership/checkout";
   }
 

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
+import { userWantsMembershipCheckout } from "@/lib/auth/registration-intent";
 import { Button } from "@/components/ui/button";
 import { 
   Sparkles, 
@@ -39,7 +40,10 @@ export default function WelcomePage() {
       
       const name = user.user_metadata?.birth_name || user.email?.split("@")[0] || "Seeker";
       setUserName(name);
-      setIsMember(user.user_metadata?.account_type === "member");
+      setIsMember(
+        user.user_metadata?.account_type === "member" ||
+          userWantsMembershipCheckout(user.user_metadata),
+      );
     }
     loadUser();
   }, [router]);

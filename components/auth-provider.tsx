@@ -13,6 +13,8 @@ import { usePathname } from "next/navigation";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import { syncMembershipFromStripe } from "@/app/actions/membership-sync";
+import { ensureUserProfile } from "@/app/actions/ensure-profile";
+import { userWantsMembershipCheckout } from "@/lib/auth/registration-intent";
 
 export type AccountType = "guest" | "member";
 
@@ -156,7 +158,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [supabase]);
 
   const tryStripeMembershipSync = useCallback(
-    async (currentUser: User, userProfile: UserProfile) => {
+    async (currentUser: User, userProfile: UserProfile, force = false) => {
       if (userProfile.accountType === "member") return;
       if (
         typeof window !== "undefined" &&
@@ -164,16 +166,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ) {
         return;
       }
-      if (guestMembershipSyncDone.current) return;
-      guestMembershipSyncDone.current = true;
+      const pendingCheckout = userWantsMembershipCheckout(
+        currentUser.user_metadata,
+      );
+      if (!force && !pendingCheckout && guestMembershipSyncDone.current) return;
 
       try {
         const result = await syncMembershipFromStripe();
         if (result.ok && result.status === "updated_member") {
+          guestMembershipSyncDone.current = true;
           setProfile(await fetchProfile(currentUser));
+        } else if (result.ok) {
+          guestMembershipSyncDone.current = true;
+        } else if (!force) {
+          guestMembershipSyncDone.current = false;
+          console.warn("Membership sync:", result.error);
         }
-      } catch {
-        /* admin/Stripe unavailable */
+      } catch (err) {
+        guestMembershipSyncDone.current = false;
+        console.warn("Membership sync failed:", err);
       }
     },
     [fetchProfile],
@@ -183,8 +194,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (user) {
       const newProfile = await fetchProfile(user);
       setProfile(newProfile);
+      if (newProfile.accountType !== "member") {
+        guestMembershipSyncDone.current = false;
+        void tryStripeMembershipSync(user, newProfile, true);
+      }
     }
-  }, [user, fetchProfile]);
+  }, [user, fetchProfile, tryStripeMembershipSync]);
 
   useEffect(() => {
     if (!supabase) {
@@ -224,6 +239,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (currentUser) {
           void (async () => {
+            await ensureUserProfile();
             const userProfile = await fetchProfile(currentUser!);
             setProfile(userProfile);
             void tryStripeMembershipSync(currentUser!, userProfile);
@@ -242,6 +258,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (session?.user) {
         setProfile(optimisticProfileFromUser(session.user));
         void (async () => {
+          await ensureUserProfile();
           const userProfile = await fetchProfile(session.user);
           setProfile(userProfile);
           void tryStripeMembershipSync(session.user, userProfile);
@@ -253,8 +270,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [supabase, fetchProfile, tryStripeMembershipSync]);
 
   const signOut = async () => {
     guestMembershipSyncDone.current = false;
