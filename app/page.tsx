@@ -31,7 +31,7 @@ const PATH_TO_VIEW: Record<string, View> = {
 export default function AdinkrarotaApp() {
   const router = useRouter();
   const pathname = usePathname();
-  const { profile, isAuthenticated } = useAuth();
+  const { profile, isAuthenticated, isLoading } = useAuth();
   const [currentView, setCurrentView] = useState<View>("home");
   const contentRef = useRef<HTMLDivElement>(null);
   
@@ -317,7 +317,15 @@ export default function AdinkrarotaApp() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
             >
-              <SpinCycle canUseInteractive={isAuthenticated && profile?.accountType === "member"} />
+              <SpinCycle
+                accessState={
+                  isLoading
+                    ? "loading"
+                    : isAuthenticated && profile?.accountType === "member"
+                      ? "member"
+                      : "public"
+                }
+              />
             </motion.div>
           )}
 

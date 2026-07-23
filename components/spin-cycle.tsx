@@ -55,7 +55,7 @@ const emptyFields: SpinCycleFields = {
 };
 
 interface SpinCycleProps {
-  canUseInteractive: boolean;
+  accessState: "loading" | "public" | "member";
 }
 
 function trimSnippet(text: string, max: number): string {
@@ -226,7 +226,7 @@ function SpinCycleCaseStudy() {
   );
 }
 
-export function SpinCycle({ canUseInteractive }: SpinCycleProps) {
+export function SpinCycle({ accessState }: SpinCycleProps) {
   const [step, setStep] = useState(0);
   const [fields, setFields] = useState<SpinCycleFields>(emptyFields);
   const [copied, setCopied] = useState(false);
@@ -428,14 +428,20 @@ export function SpinCycle({ canUseInteractive }: SpinCycleProps) {
         </p>
       </header>
 
-      {!canUseInteractive && (
+      {accessState === "loading" && (
+        <div className="mb-8 rounded-lg border border-border bg-card/50 px-4 py-3 text-sm font-serif text-muted-foreground">
+          Checking your membership access…
+        </div>
+      )}
+
+      {accessState === "public" && (
         <div className="mb-8 rounded-lg border border-primary/30 bg-primary/10 px-4 py-3 text-sm font-serif text-muted-foreground">
           Interactive Spin Cycle is a Membership feature ($2.22). You can explore the full method below
           with this in-depth case study.
         </div>
       )}
 
-      {canUseInteractive ? (
+      {accessState === "member" ? (
         <>
       {/* Step tabs */}
       <nav className="flex flex-wrap justify-center gap-2 mb-10" aria-label="Spin Cycle steps">
@@ -845,7 +851,7 @@ export function SpinCycle({ canUseInteractive }: SpinCycleProps) {
         )}
       </div>
         </>
-      ) : (
+      ) : accessState === "public" ? (
         <div className="space-y-6">
           <SpinCycleCaseStudy />
           <div className="rounded-xl border border-primary/30 bg-card/60 p-5 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
@@ -863,6 +869,13 @@ export function SpinCycle({ canUseInteractive }: SpinCycleProps) {
                 <Button className="font-serif">Unlock for $2.22</Button>
               </Link>
             </div>
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-xl mystical-border bg-card/40 backdrop-blur-sm p-6 md:p-8">
+          <div className="flex items-center gap-3 text-muted-foreground font-serif">
+            <Loader2 className="w-4 h-4 animate-spin text-primary" aria-hidden />
+            <span>Loading Spin Cycle access…</span>
           </div>
         </div>
       )}

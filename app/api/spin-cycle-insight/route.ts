@@ -7,6 +7,7 @@ import {
   isGroqInvalidApiKeyMessage,
 } from "@/lib/ai-groq";
 import { groqLanguageModel, isGroqConfigured } from "@/lib/ai-groq-server";
+import { requireSpinCycleMember } from "@/lib/spin-cycle-access";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -68,28 +69,9 @@ export async function POST(req: Request) {
     }
 
     const supabase = await createClient();
-    if (!supabase) {
-      return Response.json({ error: "Authentication is not configured." }, { status: 503 });
-    }
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return Response.json({ error: "Sign in required for Spin Cycle AI insight." }, { status: 401 });
-    }
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("account_type")
-      .eq("id", user.id)
-      .single();
-    const accountType = profile?.account_type ?? user.user_metadata?.account_type;
-    if (accountType !== "member") {
-      return Response.json(
-        { error: "Spin Cycle AI insight is available with Membership ($2.22)." },
-        { status: 403 },
-      );
+    const access = await requireSpinCycleMember(supabase, "Spin Cycle AI insight");
+    if (!access.ok) {
+      return Response.json({ error: access.error }, { status: access.status });
     }
 
     const body = await req.json().catch(() => ({}));
